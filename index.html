@@ -13,7 +13,23 @@
     --accent: #2563eb;
     --accent-hover: #1d4ed8;
     --border: #e2e8f0;
-    --highlight: #eff6ff;
+
+    /* Color-Coded Operation Palette */
+    --color-add: #16a34a;
+    --bg-add-light: #f0fdf4;
+    --border-add: #bbf7d0;
+
+    --color-sub: #2563eb;
+    --bg-sub-light: #eff6ff;
+    --border-sub: #bfdbfe;
+
+    --color-mul: #d97706;
+    --bg-mul-light: #fffbeb;
+    --border-mul: #fde68a;
+
+    --color-div: #9333ea;
+    --bg-div-light: #faf5ff;
+    --border-div: #e9d5ff;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -41,7 +57,7 @@
     justify-content: space-between;
     align-items: center;
     z-index: 10;
-    margin-bottom: 20px;
+    margin-bottom: 14px;
     border: 1px solid var(--border);
   }
 
@@ -64,6 +80,100 @@
     transition: background 0.2s;
   }
   .start-btn:hover, .action-btn:hover { background-color: var(--accent-hover); }
+
+  /* Setup Panel */
+  .setup-panel {
+    width: 100%;
+    max-width: 600px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: opacity 0.2s ease;
+  }
+
+  .setup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .setup-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .shuffle-btn {
+    background: #f1f5f9;
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .shuffle-btn:hover { background: #e2e8f0; }
+
+  /* Draggable Chips Container */
+  .order-chips {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .op-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 0;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    cursor: grab;
+    user-select: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    background-color: white;
+  }
+
+  .op-chip:active { cursor: grabbing; }
+
+  .op-chip.dragging {
+    opacity: 0.3;
+    transform: scale(0.95);
+  }
+
+  .op-chip.drag-over {
+    border-style: dashed;
+    transform: scale(1.03);
+  }
+
+  .op-badge {
+    font-size: 0.65rem;
+    font-weight: 800;
+    opacity: 0.75;
+    margin-bottom: 2px;
+  }
+
+  .op-symbol {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  /* Color Styling for Draggable Chips */
+  .op-chip[data-type="add"] { color: var(--color-add); border-color: var(--border-add); background-color: var(--bg-add-light); }
+  .op-chip[data-type="sub"] { color: var(--color-sub); border-color: var(--border-sub); background-color: var(--bg-sub-light); }
+  .op-chip[data-type="mul"] { color: var(--color-mul); border-color: var(--border-mul); background-color: var(--bg-mul-light); }
+  .op-chip[data-type="div"] { color: var(--color-div); border-color: var(--border-div); background-color: var(--bg-div-light); }
 
   /* 5-Question Window Viewport */
   #question-list {
@@ -89,28 +199,47 @@
     justify-content: space-between;
     transition: all 0.15s ease;
     flex-shrink: 0;
+    border-left-width: 8px;
   }
 
-  .q-row.active {
-    border-color: var(--accent);
-    background-color: var(--highlight);
-    box-shadow: 0 0 0 1px var(--accent);
-  }
+  /* Color-coded Question Cards */
+  .q-row.op-add { border-left-color: var(--color-add); }
+  .q-row.op-add .q-text { color: var(--color-add); }
+  .q-row.op-add.active { background-color: var(--bg-add-light); border-color: var(--color-add); }
+
+  .q-row.op-sub { border-left-color: var(--color-sub); }
+  .q-row.op-sub .q-text { color: var(--color-sub); }
+  .q-row.op-sub.active { background-color: var(--bg-sub-light); border-color: var(--color-sub); }
+
+  .q-row.op-mul { border-left-color: var(--color-mul); }
+  .q-row.op-mul .q-text { color: var(--color-mul); }
+  .q-row.op-mul.active { background-color: var(--bg-mul-light); border-color: var(--color-mul); }
+
+  .q-row.op-div { border-left-color: var(--color-div); }
+  .q-row.op-div .q-text { color: var(--color-div); }
+  .q-row.op-div.active { background-color: var(--bg-div-light); border-color: var(--color-div); }
 
   .q-num { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); width: 40px; }
-  .q-text { font-size: 1.3rem; font-weight: 600; min-width: 150px; text-align: right; margin-right: 15px; }
+  .q-text { font-size: 1.3rem; font-weight: 800; min-width: 150px; text-align: right; margin-right: 15px; }
 
   .q-input {
     width: 110px;
     font-size: 1.3rem;
+    font-weight: 700;
     padding: 6px 10px;
     border: 1px solid var(--border);
     border-radius: 6px;
     text-align: center;
     outline: none;
+    background: white;
   }
 
   .q-input:focus { border-color: var(--accent); }
+
+  .disabled-panel {
+    opacity: 0.5;
+    pointer-events: none;
+  }
 
   /* Summary Modal */
   #summary-modal {
@@ -204,6 +333,14 @@
   <button id="start-btn" class="start-btn" onclick="startTest()">Start Test</button>
 </header>
 
+<div class="setup-panel" id="setup-panel">
+  <div class="setup-header">
+    <span class="setup-title" id="setup-title">Drag to set order</span>
+    <button class="shuffle-btn" onclick="randomizeOrderUI()">🔀 Randomize All</button>
+  </div>
+  <div class="order-chips" id="order-chips"></div>
+</div>
+
 <div id="question-list"></div>
 
 <div id="summary-modal">
@@ -242,13 +379,122 @@
   let timeLeft = 180;
   let isRunning = false;
   let activeQId = null;
+  let isFullyRandomized = false;
 
-  // Add/Sub start at Easy (2-digit +/- 1-digit)
-  // Mul/Div start at Hard (excluding 2, 5, 10)
+  const opSymbols = {
+    add: '+',
+    sub: '−',
+    mul: '×',
+    div: '÷'
+  };
+
+  const opNames = {
+    add: 'Addition',
+    sub: 'Subtraction',
+    mul: 'Multiplication',
+    div: 'Division'
+  };
+
+  let currentOrder = ['add', 'sub', 'mul', 'div'];
+  let draggedIndex = null;
+
+  // Difficulty levels tracking
   let diffLevels = { add: 1, sub: 1, mul: 3, div: 3 };
 
   function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+  }
+
+  /* Draggable UI Order Controls */
+  function renderOrderChips() {
+    const container = document.getElementById('order-chips');
+    const titleEl = document.getElementById('setup-title');
+    container.innerHTML = '';
+
+    if (isFullyRandomized) {
+      titleEl.textContent = 'Order: Fully Mixed';
+    } else {
+      titleEl.textContent = 'Drag to set order';
+    }
+
+    currentOrder.forEach((type, index) => {
+      const chip = document.createElement('div');
+      chip.className = 'op-chip';
+      chip.setAttribute('draggable', 'true');
+      chip.setAttribute('data-type', type);
+      chip.dataset.index = index;
+
+      chip.innerHTML = `
+        <span class="op-badge">${isFullyRandomized ? 'MIXED' : 'STEP ' + (index + 1)}</span>
+        <span class="op-symbol">${opSymbols[type]}</span>
+      `;
+
+      chip.addEventListener('dragstart', handleDragStart);
+      chip.addEventListener('dragover', handleDragOver);
+      chip.addEventListener('dragenter', handleDragEnter);
+      chip.addEventListener('dragleave', handleDragLeave);
+      chip.addEventListener('drop', handleDrop);
+      chip.addEventListener('dragend', handleDragEnd);
+
+      container.appendChild(chip);
+    });
+  }
+
+  function handleDragStart(e) {
+    draggedIndex = parseInt(this.dataset.index, 10);
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }
+
+  function handleDragEnter(e) {
+    e.preventDefault();
+    this.classList.add('drag-over');
+  }
+
+  function handleDragLeave() {
+    this.classList.remove('drag-over');
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    this.classList.remove('drag-over');
+    const targetIndex = parseInt(this.dataset.index, 10);
+
+    if (draggedIndex !== null && draggedIndex !== targetIndex) {
+      isFullyRandomized = false; // Switch back to ordered blocks when dragging manually
+      const movedItem = currentOrder.splice(draggedIndex, 1)[0];
+      currentOrder.splice(targetIndex, 0, movedItem);
+
+      renderOrderChips();
+      createQuestionSet();
+      renderQuestions();
+    }
+  }
+
+  function handleDragEnd() {
+    this.classList.remove('dragging');
+    document.querySelectorAll('.op-chip').forEach(c => c.classList.remove('drag-over'));
+    draggedIndex = null;
+  }
+
+  function randomizeOrderUI() {
+    isFullyRandomized = true;
+    currentOrder.sort(() => Math.random() - 0.5);
+    renderOrderChips();
+    createQuestionSet();
+    renderQuestions();
   }
 
   function generateFact(type) {
@@ -273,7 +519,7 @@
     else if (type === 'sub') {
       num2 = randomInt(1, 9); // Always subtracting a 1-digit number
       if (level === 1) {
-        answer = randomInt(10, 90); // Creates a 2-digit base (num1 = 11..99)
+        answer = randomInt(10, 90); // Creates a 2-digit base
       } else if (level === 2) {
         answer = randomInt(100, 490); // Creates a 3-digit base
       } else if (level === 3) {
@@ -336,15 +582,23 @@
   }
 
   function createQuestionSet() {
-    let types = ['add', 'sub', 'mul', 'div'];
-    types.sort(() => Math.random() - 0.5);
-
     questions = [];
-    types.forEach(type => {
-      for (let i = 0; i < 25; i++) {
-        questions.push(generateFact(type));
-      }
-    });
+    if (isFullyRandomized) {
+      // Generate 25 of each operation and shuffle all 100 together
+      ['add', 'sub', 'mul', 'div'].forEach(type => {
+        for (let i = 0; i < 25; i++) {
+          questions.push(generateFact(type));
+        }
+      });
+      shuffleArray(questions);
+    } else {
+      // Group in blocks of 25 according to currentOrder
+      currentOrder.forEach(type => {
+        for (let i = 0; i < 25; i++) {
+          questions.push(generateFact(type));
+        }
+      });
+    }
   }
 
   function renderQuestions() {
@@ -353,7 +607,7 @@
 
     questions.forEach((q, index) => {
       const row = document.createElement('div');
-      row.className = 'q-row';
+      row.className = `q-row op-${q.type}`;
       row.id = `row-${index}`;
       row.dataset.id = q.id;
       
@@ -380,7 +634,9 @@
   function startTest() {
     if (isRunning) return;
     isRunning = true;
+    
     document.getElementById('start-btn').classList.add('hidden');
+    document.getElementById('setup-panel').classList.add('disabled-panel');
     
     document.querySelectorAll('.q-input').forEach(input => input.disabled = false);
 
@@ -417,7 +673,7 @@
       targetInput.focus();
       targetInput.select();
       
-      // Keep active question frame at top of 5-item viewport
+      // Frame active question at top of 5-item viewport
       container.scrollTo({
         top: targetRow.offsetTop - container.offsetTop,
         behavior: 'smooth'
@@ -524,15 +780,13 @@
     let mainWeakType = Object.keys(categoryErrors).reduce((a, b) => categoryErrors[a] > categoryErrors[b] ? a : b);
     let specificWeakSubType = Object.keys(subTypeErrors).reduce((a, b) => (subTypeErrors[a] || 0) > (subTypeErrors[b] || 0) ? a : b, '');
 
-    const typeNames = { add: 'Addition', sub: 'Subtraction', mul: 'Multiplication', div: 'Division' };
-
     let recText = '';
     if (totalCorrect === 100) {
       recText = `🌟 <strong>Perfect score!</strong> Fantastic speed and accuracy across all basic facts.`;
     } else if (specificWeakSubType && subTypeErrors[specificWeakSubType] > 1) {
-      recText = `<strong>Target Practice:</strong> Focus primarily on <strong>${typeNames[mainWeakType]}</strong>, especially <strong>${specificWeakSubType}</strong>.`;
+      recText = `<strong>Target Practice:</strong> Focus primarily on <strong>${opNames[mainWeakType]} (${opSymbols[mainWeakType]})</strong>, especially <strong>${specificWeakSubType}</strong>.`;
     } else {
-      recText = `<strong>Target Practice:</strong> Focus primarily on building speed in <strong>${typeNames[mainWeakType]}</strong>.`;
+      recText = `<strong>Target Practice:</strong> Focus primarily on building speed in <strong>${opNames[mainWeakType]} (${opSymbols[mainWeakType]})</strong>.`;
     }
 
     // Update Modal Results
@@ -577,12 +831,15 @@
     document.getElementById('timer-display').classList.remove('timer-warning');
     document.getElementById('progress-display').textContent = '0 / 100';
     document.getElementById('start-btn').classList.remove('hidden');
+    document.getElementById('setup-panel').classList.remove('disabled-panel');
     document.getElementById('summary-modal').style.display = 'none';
 
     createQuestionSet();
     renderQuestions();
   }
 
+  // Initialization
+  renderOrderChips();
   createQuestionSet();
   renderQuestions();
 </script>
