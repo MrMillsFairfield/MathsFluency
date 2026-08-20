@@ -398,7 +398,7 @@
   let currentOrder = ['add', 'sub', 'mul', 'div'];
   let draggedIndex = null;
 
-  // Difficulty levels tracking
+  // Difficulty levels: add/sub start at level 1 (2-digit +/- 1-digit)
   let diffLevels = { add: 1, sub: 1, mul: 3, div: 3 };
 
   function randomInt(min, max) {
@@ -473,7 +473,7 @@
     const targetIndex = parseInt(this.dataset.index, 10);
 
     if (draggedIndex !== null && draggedIndex !== targetIndex) {
-      isFullyRandomized = false; // Switch back to ordered blocks when dragging manually
+      isFullyRandomized = false;
       const movedItem = currentOrder.splice(draggedIndex, 1)[0];
       currentOrder.splice(targetIndex, 0, movedItem);
 
@@ -502,39 +502,39 @@
     let num1, num2, answer, text, subType;
 
     if (type === 'add') {
-      num2 = randomInt(1, 9); // Always adding a 1-digit number
       if (level === 1) {
-        num1 = randomInt(10, 99); // 2-digit number
-      } else if (level === 2) {
-        num1 = randomInt(100, 499); // 3-digit number (lower range)
-      } else if (level === 3) {
-        num1 = randomInt(500, 999); // 3-digit number (higher range)
+        // 2-digit + 1-digit
+        num1 = randomInt(10, 99);
+        num2 = randomInt(1, 9);
+        subType = `2-Digit + 1-Digit`;
       } else {
-        num1 = randomInt(100, 999); // 3-digit number (full range)
+        // Level up: 2-digit + 2-digit
+        num1 = randomInt(10, 99);
+        num2 = randomInt(10, 99);
+        subType = `2-Digit + 2-Digit`;
       }
       answer = num1 + num2;
       text = `${num1} + ${num2}`;
-      subType = `Adding +${num2}`;
     } 
     else if (type === 'sub') {
-      num2 = randomInt(1, 9); // Always subtracting a 1-digit number
       if (level === 1) {
-        answer = randomInt(10, 90); // Creates a 2-digit base
-      } else if (level === 2) {
-        answer = randomInt(100, 490); // Creates a 3-digit base
-      } else if (level === 3) {
-        answer = randomInt(500, 990); // Creates a 3-digit base (higher range)
+        // 2-digit - 1-digit
+        num1 = randomInt(11, 99);
+        num2 = randomInt(1, 9);
+        subType = `2-Digit − 1-Digit`;
       } else {
-        answer = randomInt(100, 990); // Creates a 3-digit base (full range)
+        // Level up: 2-digit - 2-digit
+        num1 = randomInt(20, 99);
+        num2 = randomInt(10, num1 - 1);
+        subType = `2-Digit − 2-Digit`;
       }
-      num1 = answer + num2;
+      answer = num1 - num2;
       text = `${num1} − ${num2}`;
-      subType = `Subtracting −${num2}`;
     } 
     else if (type === 'mul') {
-      let easyPool = [2, 5, 10];               // Level 1: Only if struggling
-      let medPool = [3, 4, 6];                // Level 2: Medium pool
-      let hardPool = [7, 8, 9, 11, 12];       // Level 3: Hard pool (default start)
+      let easyPool = [2, 5, 10];
+      let medPool = [3, 4, 6];
+      let hardPool = [7, 8, 9, 11, 12];
       
       if (level === 1) {
         num2 = easyPool[randomInt(0, easyPool.length - 1)];
@@ -555,9 +555,9 @@
       subType = `${num2}× Tables`;
     } 
     else if (type === 'div') {
-      let easyPool = [2, 5, 10];               // Level 1: Only if struggling
-      let medPool = [3, 4, 6];                // Level 2: Medium pool
-      let hardPool = [7, 8, 9, 11, 12];       // Level 3: Hard pool (default start)
+      let easyPool = [2, 5, 10];
+      let medPool = [3, 4, 6];
+      let hardPool = [7, 8, 9, 11, 12];
 
       if (level === 1) {
         num2 = easyPool[randomInt(0, easyPool.length - 1)];
@@ -584,7 +584,6 @@
   function createQuestionSet() {
     questions = [];
     if (isFullyRandomized) {
-      // Generate 25 of each operation and shuffle all 100 together
       ['add', 'sub', 'mul', 'div'].forEach(type => {
         for (let i = 0; i < 25; i++) {
           questions.push(generateFact(type));
@@ -592,7 +591,6 @@
       });
       shuffleArray(questions);
     } else {
-      // Group in blocks of 25 according to currentOrder
       currentOrder.forEach(type => {
         for (let i = 0; i < 25; i++) {
           questions.push(generateFact(type));
@@ -673,7 +671,6 @@
       targetInput.focus();
       targetInput.select();
       
-      // Frame active question at top of 5-item viewport
       container.scrollTo({
         top: targetRow.offsetTop - container.offsetTop,
         behavior: 'smooth'
@@ -789,13 +786,11 @@
       recText = `<strong>Target Practice:</strong> Focus primarily on building speed in <strong>${opNames[mainWeakType]} (${opSymbols[mainWeakType]})</strong>.`;
     }
 
-    // Update Modal Results
     document.getElementById('score-val').textContent = `${totalCorrect} / ${totalAnswered}`;
     document.getElementById('unanswered-val').textContent = totalUnanswered;
     document.getElementById('ppm-val').textContent = ppm;
     document.getElementById('rec-val').innerHTML = recText;
 
-    // Render Incorrect Problems
     const errorContainer = document.getElementById('incorrect-list');
     errorContainer.innerHTML = '';
 
