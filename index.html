@@ -30,6 +30,14 @@
     --color-div: #9333ea;
     --bg-div-light: #faf5ff;
     --border-div: #e9d5ff;
+
+    /* Status Colors */
+    --correct-bg: #dcfce7;
+    --correct-border: #22c55e;
+    --correct-text: #15803d;
+    
+    --wrong-bg: #fef2f2;
+    --wrong-border: #ef4444;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -81,7 +89,6 @@
   }
   .start-btn:hover, .action-btn:hover { background-color: var(--accent-hover); }
 
-  /* Setup Panel */
   .setup-panel {
     width: 100%;
     max-width: 600px;
@@ -114,16 +121,15 @@
     background: #f1f5f9;
     border: 1px solid var(--border);
     color: var(--text-primary);
-    padding: 4px 10px;
+    padding: 6px 12px;
     font-size: 0.8rem;
-    font-weight: 600;
+    font-weight: 700;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
   .shuffle-btn:hover { background: #e2e8f0; }
 
-  /* Draggable Chips Container */
   .order-chips {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -145,37 +151,17 @@
   }
 
   .op-chip:active { cursor: grabbing; }
+  .op-chip.dragging { opacity: 0.3; transform: scale(0.95); }
+  .op-chip.drag-over { border-style: dashed; transform: scale(1.03); }
 
-  .op-chip.dragging {
-    opacity: 0.3;
-    transform: scale(0.95);
-  }
+  .op-badge { font-size: 0.65rem; font-weight: 800; opacity: 0.75; margin-bottom: 2px; }
+  .op-symbol { font-size: 1.8rem; font-weight: 800; line-height: 1; }
 
-  .op-chip.drag-over {
-    border-style: dashed;
-    transform: scale(1.03);
-  }
-
-  .op-badge {
-    font-size: 0.65rem;
-    font-weight: 800;
-    opacity: 0.75;
-    margin-bottom: 2px;
-  }
-
-  .op-symbol {
-    font-size: 1.8rem;
-    font-weight: 800;
-    line-height: 1;
-  }
-
-  /* Color Styling for Draggable Chips */
   .op-chip[data-type="add"] { color: var(--color-add); border-color: var(--border-add); background-color: var(--bg-add-light); }
   .op-chip[data-type="sub"] { color: var(--color-sub); border-color: var(--border-sub); background-color: var(--bg-sub-light); }
   .op-chip[data-type="mul"] { color: var(--color-mul); border-color: var(--border-mul); background-color: var(--bg-mul-light); }
   .op-chip[data-type="div"] { color: var(--color-div); border-color: var(--border-div); background-color: var(--bg-div-light); }
 
-  /* 5-Question Window Viewport */
   #question-list {
     width: 100%;
     max-width: 600px;
@@ -202,7 +188,6 @@
     border-left-width: 8px;
   }
 
-  /* Color-coded Question Cards */
   .q-row.op-add { border-left-color: var(--color-add); }
   .q-row.op-add .q-text { color: var(--color-add); }
   .q-row.op-add.active { background-color: var(--bg-add-light); border-color: var(--color-add); }
@@ -227,21 +212,43 @@
     font-size: 1.3rem;
     font-weight: 700;
     padding: 6px 10px;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 6px;
     text-align: center;
     outline: none;
     background: white;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
   }
 
   .q-input:focus { border-color: var(--accent); }
 
-  .disabled-panel {
-    opacity: 0.5;
-    pointer-events: none;
+  /* Green Lock-in State for Answered Correct Questions */
+  .q-input.correct-box {
+    background-color: var(--correct-bg) !important;
+    border-color: var(--correct-border) !important;
+    color: var(--correct-text) !important;
+    font-weight: 800;
   }
 
-  /* Summary Modal */
+  .q-row.correct-row {
+    background-color: var(--bg-add-light);
+  }
+
+  /* Shake Animation for Incorrect Attempts */
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-8px); }
+    40%, 80% { transform: translateX(8px); }
+  }
+
+  .q-input.shake-box {
+    animation: shake 0.35s ease-in-out;
+    border-color: var(--wrong-border) !important;
+    background-color: var(--wrong-bg) !important;
+  }
+
+  .disabled-panel { opacity: 0.5; pointer-events: none; }
+
   #summary-modal {
     display: none;
     position: fixed;
@@ -266,14 +273,7 @@
   }
 
   .summary-card h2 { margin-bottom: 20px; font-size: 1.5rem; text-align: center; }
-  
-  .metrics-grid { 
-    display: grid; 
-    grid-template-columns: repeat(3, 1fr); 
-    gap: 12px; 
-    margin-bottom: 16px; 
-  }
-  
+  .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
   .metric-card { background: #f8fafc; padding: 14px 10px; border-radius: 10px; text-align: center; }
   .metric-value { font-size: 1.4rem; font-weight: 800; color: var(--accent); }
   .metric-title { font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px; text-transform: uppercase; font-weight: 600; }
@@ -378,22 +378,12 @@
   let timerInterval = null;
   let timeLeft = 180;
   let isRunning = false;
-  let activeQId = null;
+  let activeIndex = 0;
   let isFullyRandomized = false;
+  let isShaking = false;
 
-  const opSymbols = {
-    add: '+',
-    sub: '−',
-    mul: '×',
-    div: '÷'
-  };
-
-  const opNames = {
-    add: 'Addition',
-    sub: 'Subtraction',
-    mul: 'Multiplication',
-    div: 'Division'
-  };
+  const opSymbols = { add: '+', sub: '−', mul: '×', div: '÷' };
+  const opNames = { add: 'Addition', sub: 'Subtraction', mul: 'Multiplication', div: 'Division' };
 
   let currentOrder = ['add', 'sub', 'mul', 'div'];
   let draggedIndex = null;
@@ -412,7 +402,6 @@
     }
   }
 
-  /* Draggable UI Order Controls */
   function renderOrderChips() {
     const container = document.getElementById('order-chips');
     const titleEl = document.getElementById('setup-title');
@@ -503,7 +492,7 @@
 
     if (type === 'add') {
       if (level === 1) {
-        // 2-digit + 1-digit
+        // Level 1: 2-digit + 1-digit
         num1 = randomInt(10, 99);
         num2 = randomInt(1, 9);
         subType = `2-Digit + 1-Digit`;
@@ -518,7 +507,7 @@
     } 
     else if (type === 'sub') {
       if (level === 1) {
-        // 2-digit - 1-digit
+        // Level 1: 2-digit - 1-digit
         num1 = randomInt(11, 99);
         num2 = randomInt(1, 9);
         subType = `2-Digit − 1-Digit`;
@@ -617,16 +606,153 @@
                id="input-${index}" 
                value="${userAnswers[q.id] || ''}" 
                ${isRunning ? '' : 'disabled'} 
-               oninput="onAnswerInput(${index})" 
                onkeydown="handleKeyDown(event, ${index})">
       `;
 
-      row.addEventListener('click', () => {
-        if (isRunning) focusInput(index);
+      row.addEventListener('click', (e) => {
+        if (isRunning && activeIndex !== index) {
+          requestNavigation(index);
+        }
       });
 
       container.appendChild(row);
     });
+  }
+
+  function validateCurrentQuestion(index) {
+    if (index < 0 || index >= questions.length) return true;
+    
+    const q = questions[index];
+    const inputElem = document.getElementById(`input-${index}`);
+    if (!inputElem) return true;
+
+    const val = inputElem.value.trim();
+
+    // If input is empty, allow skipping without shake
+    if (val === '') {
+      return true;
+    }
+
+    const numVal = parseInt(val, 10);
+    const isCorrect = numVal === q.answer;
+
+    if (isCorrect) {
+      // Store answer & apply green visual state
+      userAnswers[q.id] = val;
+      inputElem.classList.remove('shake-box');
+      inputElem.classList.add('correct-box');
+
+      // Adaptive level boost
+      if (diffLevels[q.type] < 4) {
+        diffLevels[q.type]++;
+        updateUpcomingQuestions(q.type, index);
+      }
+
+      updateProgress();
+      return true;
+
+    } else {
+      // WRONG ANSWER: Shake, clear, refocus, and prevent navigation
+      triggerShakeAndClear(index);
+      return false;
+    }
+  }
+
+  function triggerShakeAndClear(index) {
+    const inputElem = document.getElementById(`input-${index}`);
+    if (!inputElem || isShaking) return;
+
+    isShaking = true;
+    delete userAnswers[questions[index].id];
+    
+    inputElem.classList.remove('correct-box');
+    inputElem.classList.add('shake-box');
+
+    // Vibrate device if supported
+    if (navigator.vibrate) navigator.vibrate(200);
+
+    setTimeout(() => {
+      inputElem.value = '';
+      inputElem.classList.remove('shake-box');
+      inputElem.focus();
+      inputElem.select();
+      isShaking = false;
+      updateProgress();
+    }, 380);
+  }
+
+  function requestNavigation(targetIndex) {
+    if (isShaking) return;
+
+    if (targetIndex === activeIndex) return;
+
+    // Validate active question before moving away
+    const isValid = validateCurrentQuestion(activeIndex);
+    
+    if (isValid) {
+      focusInput(targetIndex);
+    }
+  }
+
+  function focusInput(index) {
+    if (index < 0 || index >= questions.length) return;
+
+    activeIndex = index;
+
+    document.querySelectorAll('.q-row').forEach(r => r.classList.remove('active'));
+    
+    const container = document.getElementById('question-list');
+    const targetRow = document.getElementById(`row-${index}`);
+    const targetInput = document.getElementById(`input-${index}`);
+
+    if (targetRow && targetInput) {
+      targetRow.classList.add('active');
+      targetInput.focus();
+      targetInput.select();
+      
+      // Auto-scroll viewport so current item is framed nicely
+      container.scrollTo({
+        top: targetRow.offsetTop - container.offsetTop,
+        behavior: 'smooth'
+      });
+    }
+  }
+
+  function handleKeyDown(e, index) {
+    if (e.key === 'Enter' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      requestNavigation(index + 1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      requestNavigation(index - 1);
+    }
+  }
+
+  function updateUpcomingQuestions(type, currentIndex) {
+    const bufferStartIndex = currentIndex + 5;
+
+    for (let i = bufferStartIndex; i < questions.length; i++) {
+      const futureQ = questions[i];
+      if (futureQ.type === type && (!userAnswers[futureQ.id] || userAnswers[futureQ.id].trim() === '')) {
+        const newFact = generateFact(type);
+        newFact.id = futureQ.id;
+        questions[i] = newFact;
+
+        const textElem = document.getElementById(`text-${i}`);
+        if (textElem) {
+          textElem.textContent = `${newFact.text} =`;
+        }
+      }
+    }
+  }
+
+  function updateProgress() {
+    const answeredCount = Object.keys(userAnswers).filter(k => userAnswers[k] !== '').length;
+    document.getElementById('progress-display').textContent = `${answeredCount} / 100`;
+
+    if (answeredCount === 100) {
+      finishTest();
+    }
   }
 
   function startTest() {
@@ -656,91 +782,10 @@
     if (timeLeft <= 30) el.classList.add('timer-warning');
   }
 
-  function focusInput(index) {
-    if (index < 0 || index >= questions.length) return;
-    activeQId = questions[index].id;
-
-    document.querySelectorAll('.q-row').forEach(r => r.classList.remove('active'));
-    
-    const container = document.getElementById('question-list');
-    const targetRow = document.getElementById(`row-${index}`);
-    const targetInput = document.getElementById(`input-${index}`);
-
-    if (targetRow && targetInput) {
-      targetRow.classList.add('active');
-      targetInput.focus();
-      targetInput.select();
-      
-      container.scrollTo({
-        top: targetRow.offsetTop - container.offsetTop,
-        behavior: 'smooth'
-      });
-    }
-  }
-
-  function onAnswerInput(index) {
-    const q = questions[index];
-    const val = document.getElementById(`input-${index}`).value.trim();
-    userAnswers[q.id] = val;
-
-    if (val !== '') {
-      const isCorrect = parseInt(val, 10) === q.answer;
-      let levelChanged = false;
-
-      if (isCorrect && diffLevels[q.type] < 4) {
-        diffLevels[q.type]++;
-        levelChanged = true;
-      } else if (!isCorrect && diffLevels[q.type] > 1) {
-        diffLevels[q.type]--;
-        levelChanged = true;
-      }
-
-      if (levelChanged) {
-        updateUpcomingQuestions(q.type, index);
-      }
-    }
-
-    updateProgress();
-
-    if (Object.keys(userAnswers).filter(k => userAnswers[k] !== '').length === 100) {
-      finishTest();
-    }
-  }
-
-  function updateUpcomingQuestions(type, currentIndex) {
-    const bufferStartIndex = currentIndex + 5;
-
-    for (let i = bufferStartIndex; i < questions.length; i++) {
-      const futureQ = questions[i];
-      if (futureQ.type === type && (!userAnswers[futureQ.id] || userAnswers[futureQ.id].trim() === '')) {
-        const newFact = generateFact(type);
-        newFact.id = futureQ.id;
-        questions[i] = newFact;
-
-        const textElem = document.getElementById(`text-${i}`);
-        if (textElem) {
-          textElem.textContent = `${newFact.text} =`;
-        }
-      }
-    }
-  }
-
-  function updateProgress() {
-    const answeredCount = Object.keys(userAnswers).filter(k => userAnswers[k] !== '').length;
-    document.getElementById('progress-display').textContent = `${answeredCount} / 100`;
-  }
-
-  function handleKeyDown(e, index) {
-    if (e.key === 'Enter' || e.key === 'ArrowDown') {
-      e.preventDefault();
-      focusInput(index + 1);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      focusInput(index - 1);
-    }
-  }
-
   function finishTest() {
+    // Validate final question if user finishes by pressing enter/timer
+    validateCurrentQuestion(activeIndex);
+
     clearInterval(timerInterval);
     isRunning = false;
 
@@ -779,11 +824,11 @@
 
     let recText = '';
     if (totalCorrect === 100) {
-      recText = `🌟 <strong>Perfect score!</strong> Fantastic speed and accuracy across all basic facts.`;
+      recText = `🌟 <strong>Perfect score!</strong> Outstanding speed, precision, and mastery across all fact families!`;
     } else if (specificWeakSubType && subTypeErrors[specificWeakSubType] > 1) {
-      recText = `<strong>Target Practice:</strong> Focus primarily on <strong>${opNames[mainWeakType]} (${opSymbols[mainWeakType]})</strong>, especially <strong>${specificWeakSubType}</strong>.`;
+      recText = `<strong>Target Practice:</strong> Spend extra time on <strong>${opNames[mainWeakType]} (${opSymbols[mainWeakType]})</strong>, particularly <strong>${specificWeakSubType}</strong>.`;
     } else {
-      recText = `<strong>Target Practice:</strong> Focus primarily on building speed in <strong>${opNames[mainWeakType]} (${opSymbols[mainWeakType]})</strong>.`;
+      recText = `<strong>Target Practice:</strong> Focus on increasing your speed and accuracy in <strong>${opNames[mainWeakType]} (${opSymbols[mainWeakType]})</strong>.`;
     }
 
     document.getElementById('score-val').textContent = `${totalCorrect} / ${totalAnswered}`;
@@ -818,7 +863,7 @@
     clearInterval(timerInterval);
     timeLeft = 180;
     isRunning = false;
-    activeQId = null;
+    activeIndex = 0;
     userAnswers = {};
     diffLevels = { add: 1, sub: 1, mul: 3, div: 3 };
 
@@ -833,7 +878,7 @@
     renderQuestions();
   }
 
-  // Initialization
+  // Initializing application state on load
   renderOrderChips();
   createQuestionSet();
   renderQuestions();
