@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Math Facts Speed Test</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
   :root {
     --bg-color: #f8fafc;
     --card-bg: #ffffff;
@@ -40,7 +43,7 @@
     --wrong-border: #ef4444;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
 
   body {
     background-color: var(--bg-color);
@@ -57,41 +60,103 @@
     top: 0;
     background: var(--card-bg);
     width: 100%;
-    max-width: 600px;
-    padding: 16px 24px;
+    max-width: 960px;
+    padding: 14px 20px;
     border-radius: 12px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 10;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     border: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .header-stats {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
   }
 
   .stat-box { display: flex; flex-direction: column; align-items: center; }
-  .stat-label { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; }
-  .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
-  .timer-warning { color: #dc2626; animation: pulse 1s infinite; }
+  .stat-label { font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-value { font-size: 1.4rem; font-weight: 800; color: var(--text-primary); }
 
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .streak-badge {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde047;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: transform 0.2s;
+  }
+
+  .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
   .start-btn, .action-btn {
     background-color: var(--accent);
     color: white;
     border: none;
-    padding: 10px 20px;
-    font-size: 1rem;
-    font-weight: 600;
+    padding: 10px 18px;
+    font-size: 0.95rem;
+    font-weight: 700;
     border-radius: 8px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.2s, transform 0.1s;
   }
   .start-btn:hover, .action-btn:hover { background-color: var(--accent-hover); }
+  .start-btn:active, .action-btn:active { transform: scale(0.98); }
+
+  .toggle-game-btn {
+    background: #0f172a;
+    color: #f8fafc;
+    border: 1px solid #334155;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+  }
+  .toggle-game-btn:hover { background: #1e293b; }
+  .toggle-game-btn.active {
+    background: #2563eb;
+    border-color: #3b82f6;
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
+  }
+
+  .workspace {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    max-width: 960px;
+    align-items: flex-start;
+  }
+
+  .left-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
 
   .setup-panel {
     width: 100%;
-    max-width: 600px;
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -141,7 +206,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 12px 0;
+    padding: 10px 0;
     border-radius: 10px;
     border: 2px solid var(--border);
     cursor: grab;
@@ -155,7 +220,7 @@
   .op-chip.drag-over { border-style: dashed; transform: scale(1.03); }
 
   .op-badge { font-size: 0.65rem; font-weight: 800; opacity: 0.75; margin-bottom: 2px; }
-  .op-symbol { font-size: 1.8rem; font-weight: 800; line-height: 1; }
+  .op-symbol { font-size: 1.6rem; font-weight: 800; line-height: 1; }
 
   .op-chip[data-type="add"] { color: var(--color-add); border-color: var(--border-add); background-color: var(--bg-add-light); }
   .op-chip[data-type="sub"] { color: var(--color-sub); border-color: var(--border-sub); background-color: var(--bg-sub-light); }
@@ -164,14 +229,13 @@
 
   #question-list {
     width: 100%;
-    max-width: 600px;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    height: 348px; /* Exactly 5 items (60px each) + 4 gaps (12px each) */
+    height: 348px; /* 5 rows x 60px + 4 gaps x 12px */
     overflow: hidden;
     scroll-behavior: smooth;
-    padding-right: 4px;
+    padding-right: 2px;
   }
 
   .q-row {
@@ -204,8 +268,8 @@
   .q-row.op-div .q-text { color: var(--color-div); }
   .q-row.op-div.active { background-color: var(--bg-div-light); border-color: var(--color-div); }
 
-  .q-num { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); width: 40px; }
-  .q-text { font-size: 1.3rem; font-weight: 800; min-width: 150px; text-align: right; margin-right: 15px; }
+  .q-num { font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); width: 40px; }
+  .q-text { font-size: 1.3rem; font-weight: 800; min-width: 140px; text-align: right; margin-right: 15px; }
 
   .q-input {
     width: 110px;
@@ -222,7 +286,6 @@
 
   .q-input:focus { border-color: var(--accent); }
 
-  /* Green Lock-in State for Answered Correct Questions */
   .q-input.correct-box {
     background-color: var(--correct-bg) !important;
     border-color: var(--correct-border) !important;
@@ -230,11 +293,6 @@
     font-weight: 800;
   }
 
-  .q-row.correct-row {
-    background-color: var(--bg-add-light);
-  }
-
-  /* Shake Animation for Incorrect Attempts */
   @keyframes shake {
     0%, 100% { transform: translateX(0); }
     20%, 60% { transform: translateX(-8px); }
@@ -249,12 +307,58 @@
 
   .disabled-panel { opacity: 0.5; pointer-events: none; }
 
+  .game-pane {
+    width: 320px;
+    background: #0f172a;
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid #1e293b;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .game-header-bar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    color: #f8fafc;
+  }
+
+  .game-tier-title {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #38bdf8;
+  }
+
+  .game-streak-counter {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #fbbf24;
+  }
+
+  #game-canvas {
+    width: 280px;
+    height: 350px;
+    background: radial-gradient(circle at 50% 30%, #1e293b 0%, #0f172a 100%);
+    border-radius: 12px;
+    border: 1px solid #334155;
+    display: block;
+  }
+
   #summary-modal {
     display: none;
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(4px);
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(5px);
     justify-content: center;
     align-items: center;
     z-index: 100;
@@ -264,7 +368,7 @@
   .summary-card {
     background: white;
     width: 100%;
-    max-width: 520px;
+    max-width: 540px;
     max-height: 90vh;
     overflow-y: auto;
     border-radius: 16px;
@@ -272,25 +376,31 @@
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   }
 
-  .summary-card h2 { margin-bottom: 20px; font-size: 1.5rem; text-align: center; }
-  .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
-  .metric-card { background: #f8fafc; padding: 14px 10px; border-radius: 10px; text-align: center; }
+  .summary-card h2 { margin-bottom: 20px; font-size: 1.5rem; text-align: center; color: var(--text-primary); font-weight: 800; }
+  
+  .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+  .metric-card { background: #f8fafc; padding: 14px 10px; border-radius: 10px; text-align: center; border: 1px solid var(--border); }
   .metric-value { font-size: 1.4rem; font-weight: 800; color: var(--accent); }
-  .metric-title { font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px; text-transform: uppercase; font-weight: 600; }
+  .metric-title { font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px; text-transform: uppercase; font-weight: 700; }
 
   .recommendation-box {
-    background: #fef3c7;
-    border: 1px solid #fde047;
-    color: #854d0e;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
     padding: 14px 16px;
     border-radius: 10px;
-    font-size: 0.95rem;
-    line-height: 1.4;
+    font-size: 0.92rem;
+    line-height: 1.45;
     margin-bottom: 20px;
+  }
+  .recommendation-box.has-errors {
+    background: #fffbeb;
+    border-color: #fde68a;
+    color: #92400e;
   }
 
   .incorrect-section { margin-bottom: 20px; }
-  .incorrect-title { font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 10px; }
+  .incorrect-title { font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.05em; }
 
   .incorrect-list {
     display: flex;
@@ -312,48 +422,80 @@
     font-size: 0.95rem;
   }
 
-  .error-q { font-weight: 600; color: #991b1b; }
-  .error-user { color: #dc2626; text-decoration: line-through; margin-right: 6px; font-weight: 600; }
-  .error-correct { color: #166534; font-weight: 700; }
+  .error-q { font-weight: 700; color: #991b1b; }
+  .error-user { color: #dc2626; text-decoration: line-through; margin-right: 6px; font-weight: 700; }
+  .error-correct { color: #166534; font-weight: 800; }
 
   .hidden { display: none !important; }
+
+  @media (max-width: 768px) {
+    .workspace { flex-direction: column; align-items: center; }
+    .game-pane { width: 100%; max-width: 400px; margin-top: 10px; }
+    #game-canvas { width: 100%; max-width: 360px; }
+    header { justify-content: center; text-align: center; }
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="stat-box">
-    <span class="stat-label">Time Remaining</span>
-    <span class="stat-value" id="timer-display">03:00</span>
+  <div class="header-stats">
+    <div class="stat-box">
+      <span class="stat-label">Time Remaining</span>
+      <span class="stat-value" id="timer-display">03:00</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-label">Progress</span>
+      <span class="stat-value" id="progress-display">0 / 100</span>
+    </div>
+    <div class="streak-badge" id="header-streak-badge">
+      🔥 <span id="header-streak-val">0</span>
+    </div>
   </div>
-  <div class="stat-box">
-    <span class="stat-label">Progress</span>
-    <span class="stat-value" id="progress-display">0 / 100</span>
+
+  <div class="header-controls">
+    <button class="toggle-game-btn active" id="game-toggle-btn" onclick="toggleGameMode()">
+      Ball: ON
+    </button>
+    <button id="start-btn" class="start-btn" onclick="startTest()">Start Test</button>
   </div>
-  <button id="start-btn" class="start-btn" onclick="startTest()">Start Test</button>
 </header>
 
-<div class="setup-panel" id="setup-panel">
-  <div class="setup-header">
-    <span class="setup-title" id="setup-title">Drag to set order</span>
-    <button class="shuffle-btn" onclick="randomizeOrderUI()">🔀 Randomize All</button>
-  </div>
-  <div class="order-chips" id="order-chips"></div>
-</div>
+<div class="workspace">
+  <!-- Left Side: Math Practice Interface -->
+  <div class="left-pane">
+    <div class="setup-panel" id="setup-panel">
+      <div class="setup-header">
+        <span class="setup-title" id="setup-title">Drag to set order</span>
+        <button class="shuffle-btn" onclick="randomizeOrderUI()">🔀 Randomize All</button>
+      </div>
+      <div class="order-chips" id="order-chips"></div>
+    </div>
 
-<div id="question-list"></div>
+    <div id="question-list"></div>
+  </div>
+
+  <!-- Right Side: Interactive Bouncing Ball Game Canvas -->
+  <div class="game-pane" id="game-pane">
+    <div class="game-header-bar">
+      <span class="game-tier-title" id="tier-title-display">Level 0</span>
+      <span class="game-streak-counter" id="tier-streak-display">STREAK: 0</span>
+    </div>
+    <canvas id="game-canvas" width="280" height="350"></canvas>
+  </div>
+</div>
 
 <div id="summary-modal">
   <div class="summary-card">
     <h2>Test Results</h2>
     <div class="metrics-grid">
       <div class="metric-card">
-        <div class="metric-value" id="score-val">0/0</div>
+        <div class="metric-value" id="score-val">0 / 0</div>
         <div class="metric-title">Correct / Answered</div>
       </div>
       <div class="metric-card">
-        <div class="metric-value" id="unanswered-val">0</div>
-        <div class="metric-title">Unanswered</div>
+        <div class="metric-value" id="errors-val">0</div>
+        <div class="metric-title">Error Attempts</div>
       </div>
       <div class="metric-card">
         <div class="metric-value" id="ppm-val">0</div>
@@ -364,7 +506,7 @@
     <div class="recommendation-box" id="rec-val"></div>
 
     <div class="incorrect-section">
-      <div class="incorrect-title">Incorrect Answers</div>
+      <div class="incorrect-title">Attempt Errors & Wrong Guesses</div>
       <div id="incorrect-list" class="incorrect-list"></div>
     </div>
 
@@ -375,12 +517,15 @@
 <script>
   let questions = [];
   let userAnswers = {};
+  let attemptErrors = []; // Records failed attempts whenever an incorrect answer shakes & clears
   let timerInterval = null;
   let timeLeft = 180;
   let isRunning = false;
   let activeIndex = 0;
   let isFullyRandomized = false;
   let isShaking = false;
+  let currentStreak = 0;
+  let isGameModeOn = true;
 
   const opSymbols = { add: '+', sub: '−', mul: '×', div: '÷' };
   const opNames = { add: 'Addition', sub: 'Subtraction', mul: 'Multiplication', div: 'Division' };
@@ -388,7 +533,7 @@
   let currentOrder = ['add', 'sub', 'mul', 'div'];
   let draggedIndex = null;
 
-  // Difficulty levels: add/sub start at level 1 (2-digit +/- 1-digit)
+  // Difficulty levels
   let diffLevels = { add: 1, sub: 1, mul: 3, div: 3 };
 
   function randomInt(min, max) {
@@ -492,14 +637,12 @@
 
     if (type === 'add') {
       if (level === 1) {
-        // Level 1: 2-digit + 1-digit
-        num1 = randomInt(10, 99);
+        num1 = randomInt(1, 20);
         num2 = randomInt(1, 9);
         subType = `2-Digit + 1-Digit`;
       } else {
-        // Level up: 2-digit + 2-digit
-        num1 = randomInt(10, 99);
-        num2 = randomInt(10, 99);
+        num1 = randomInt(10, 30);
+        num2 = randomInt(1, 20);
         subType = `2-Digit + 2-Digit`;
       }
       answer = num1 + num2;
@@ -507,13 +650,11 @@
     } 
     else if (type === 'sub') {
       if (level === 1) {
-        // Level 1: 2-digit - 1-digit
-        num1 = randomInt(11, 99);
+        num1 = randomInt(11, 20);
         num2 = randomInt(1, 9);
         subType = `2-Digit − 1-Digit`;
       } else {
-        // Level up: 2-digit - 2-digit
-        num1 = randomInt(20, 99);
+        num1 = randomInt(20, 40);
         num2 = randomInt(10, num1 - 1);
         subType = `2-Digit − 2-Digit`;
       }
@@ -602,14 +743,14 @@
         <span class="q-num">#${index + 1}</span>
         <span class="q-text" id="text-${index}">${q.text} =</span>
         <input type="number" 
-               class="q-input" 
+               class="q-input ${userAnswers[q.id] !== undefined ? 'correct-box' : ''}" 
                id="input-${index}" 
                value="${userAnswers[q.id] || ''}" 
                ${isRunning ? '' : 'disabled'} 
                onkeydown="handleKeyDown(event, ${index})">
       `;
 
-      row.addEventListener('click', (e) => {
+      row.addEventListener('click', () => {
         if (isRunning && activeIndex !== index) {
           requestNavigation(index);
         }
@@ -628,7 +769,7 @@
 
     const val = inputElem.value.trim();
 
-    // If input is empty, allow skipping without shake
+    // Empty input: allow navigation without penalty
     if (val === '') {
       return true;
     }
@@ -637,12 +778,13 @@
     const isCorrect = numVal === q.answer;
 
     if (isCorrect) {
-      // Store answer & apply green visual state
+      // Correct answer: store answer & advance streak
       userAnswers[q.id] = val;
       inputElem.classList.remove('shake-box');
       inputElem.classList.add('correct-box');
 
-      // Adaptive level boost
+      incrementStreak();
+
       if (diffLevels[q.type] < 4) {
         diffLevels[q.type]++;
         updateUpcomingQuestions(q.type, index);
@@ -652,7 +794,16 @@
       return true;
 
     } else {
-      // WRONG ANSWER: Shake, clear, refocus, and prevent navigation
+      // Incorrect attempt: record error attempt, reset streak, trigger red explosion & shake box
+      attemptErrors.push({
+        qText: q.text,
+        wrongInput: val,
+        correctAns: q.answer,
+        type: q.type,
+        subType: q.subType
+      });
+
+      resetStreakAndTriggerExplosion();
       triggerShakeAndClear(index);
       return false;
     }
@@ -668,7 +819,6 @@
     inputElem.classList.remove('correct-box');
     inputElem.classList.add('shake-box');
 
-    // Vibrate device if supported
     if (navigator.vibrate) navigator.vibrate(200);
 
     setTimeout(() => {
@@ -678,17 +828,14 @@
       inputElem.select();
       isShaking = false;
       updateProgress();
-    }, 380);
+    }, 360);
   }
 
   function requestNavigation(targetIndex) {
     if (isShaking) return;
-
     if (targetIndex === activeIndex) return;
 
-    // Validate active question before moving away
     const isValid = validateCurrentQuestion(activeIndex);
-    
     if (isValid) {
       focusInput(targetIndex);
     }
@@ -698,7 +845,6 @@
     if (index < 0 || index >= questions.length) return;
 
     activeIndex = index;
-
     document.querySelectorAll('.q-row').forEach(r => r.classList.remove('active'));
     
     const container = document.getElementById('question-list');
@@ -710,7 +856,6 @@
       targetInput.focus();
       targetInput.select();
       
-      // Auto-scroll viewport so current item is framed nicely
       container.scrollTo({
         top: targetRow.offsetTop - container.offsetTop,
         behavior: 'smooth'
@@ -755,6 +900,49 @@
     }
   }
 
+  function incrementStreak() {
+    currentStreak++;
+    updateStreakUI();
+  }
+
+  function resetStreakAndTriggerExplosion() {
+    currentStreak = 0;
+    updateStreakUI();
+    if (window.triggerRedExplosion) {
+      window.triggerRedExplosion();
+    }
+  }
+
+  function updateStreakUI() {
+    document.getElementById('header-streak-val').textContent = currentStreak;
+    document.getElementById('tier-streak-display').textContent = `STREAK: ${currentStreak}`;
+
+    let tierTitle = "Level 0";
+    if (currentStreak >= 40) tierTitle = "Level 5";
+    else if (currentStreak >= 30) tierTitle = "Level 4";
+    else if (currentStreak >= 20) tierTitle = "Level 3";
+    else if (currentStreak >= 10) tierTitle = "Level 2";
+    else if (currentStreak >= 5) tierTitle = "Level 1";
+
+    document.getElementById('tier-title-display').textContent = tierTitle;
+  }
+
+  function toggleGameMode() {
+    isGameModeOn = !isGameModeOn;
+    const pane = document.getElementById('game-pane');
+    const btn = document.getElementById('game-toggle-btn');
+
+    if (isGameModeOn) {
+      pane.style.display = 'flex';
+      btn.textContent = 'Ball: ON';
+      btn.classList.add('active');
+    } else {
+      pane.style.display = 'none';
+      btn.textContent = 'Ball: OFF';
+      btn.classList.remove('active');
+    }
+  }
+
   function startTest() {
     if (isRunning) return;
     isRunning = true;
@@ -777,78 +965,70 @@
     const mins = Math.floor(timeLeft / 60);
     const secs = timeLeft % 60;
     const display = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    const el = document.getElementById('timer-display');
-    el.textContent = display;
-    if (timeLeft <= 30) el.classList.add('timer-warning');
+    // Timer text remains clean and standard without red flashing
+    document.getElementById('timer-display').textContent = display;
   }
 
   function finishTest() {
-    // Validate final question if user finishes by pressing enter/timer
     validateCurrentQuestion(activeIndex);
 
     clearInterval(timerInterval);
     isRunning = false;
 
     const timeSpentSeconds = Math.max(1, 180 - timeLeft);
-    let totalAnswered = 0;
-    let totalCorrect = 0;
+    const totalAnswered = Object.keys(userAnswers).filter(k => userAnswers[k] !== '').length;
+    const ppm = Math.round((totalAnswered / timeSpentSeconds) * 60);
+
+    // Feedback analyzes ONLY actual recorded attempt errors
     let categoryErrors = { add: 0, sub: 0, mul: 0, div: 0 };
     let subTypeErrors = {};
-    let incorrectQuestions = [];
 
-    questions.forEach(q => {
-      const uAns = userAnswers[q.id];
-      const isAnswered = uAns !== undefined && uAns.trim() !== '';
-
-      if (isAnswered) {
-        totalAnswered++;
-        const correct = parseInt(uAns, 10) === q.answer;
-        if (correct) {
-          totalCorrect++;
-        } else {
-          categoryErrors[q.type]++;
-          subTypeErrors[q.subType] = (subTypeErrors[q.subType] || 0) + 1;
-          incorrectQuestions.push({ text: q.text, userAns: uAns, correctAns: q.answer });
-        }
-      } else {
-        categoryErrors[q.type]++;
-        subTypeErrors[q.subType] = (subTypeErrors[q.subType] || 0) + 1;
-      }
+    attemptErrors.forEach(err => {
+      categoryErrors[err.type] = (categoryErrors[err.type] || 0) + 1;
+      subTypeErrors[err.subType] = (subTypeErrors[err.subType] || 0) + 1;
     });
 
-    const totalUnanswered = 100 - totalAnswered;
-    const ppm = Math.round((totalCorrect / timeSpentSeconds) * 60);
+    const totalErrors = attemptErrors.length;
 
-    let mainWeakType = Object.keys(categoryErrors).reduce((a, b) => categoryErrors[a] > categoryErrors[b] ? a : b);
-    let specificWeakSubType = Object.keys(subTypeErrors).reduce((a, b) => (subTypeErrors[a] || 0) > (subTypeErrors[b] || 0) ? a : b, '');
-
+    let recBox = document.getElementById('rec-val');
     let recText = '';
-    if (totalCorrect === 100) {
-      recText = `🌟 <strong>Perfect score!</strong> Outstanding speed, precision, and mastery across all fact families!`;
-    } else if (specificWeakSubType && subTypeErrors[specificWeakSubType] > 1) {
-      recText = `<strong>Target Practice:</strong> Spend extra time on <strong>${opNames[mainWeakType]} (${opSymbols[mainWeakType]})</strong>, particularly <strong>${specificWeakSubType}</strong>.`;
+
+    if (totalErrors === 0 && totalAnswered > 0) {
+      recBox.className = "recommendation-box";
+      recText = `🌟 <strong>Perfect accuracy!</strong> You answered ${totalAnswered} questions with zero wrong attempts. Exceptional calculation speed and precision!`;
+    } else if (totalErrors === 0 && totalAnswered === 0) {
+      recBox.className = "recommendation-box";
+      recText = `<strong>No questions attempted.</strong> Press Start Test and type in your answers to begin practicing!`;
     } else {
-      recText = `<strong>Target Practice:</strong> Focus on increasing your speed and accuracy in <strong>${opNames[mainWeakType]} (${opSymbols[mainWeakType]})</strong>.`;
+      recBox.className = "recommendation-box has-errors";
+      let mainWeakType = Object.keys(categoryErrors).reduce((a, b) => categoryErrors[a] > categoryErrors[b] ? a : b);
+      let specificWeakSubType = Object.keys(subTypeErrors).reduce((a, b) => (subTypeErrors[a] || 0) > (subTypeErrors[b] || 0) ? a : b, '');
+
+      if (specificWeakSubType && subTypeErrors[specificWeakSubType] > 0) {
+        recText = `<strong>Targeted Feedback (${totalErrors} total error attempt${totalErrors > 1 ? 's' : ''}):</strong> Your wrong attempts occurred mostly in <strong>${opNames[mainWeakType]} (${opSymbols[mainWeakType]})</strong>, specifically on <strong>${specificWeakSubType}</strong>. Focus on these problem types in your next test!`;
+      } else {
+        recText = `<strong>Targeted Feedback (${totalErrors} total error attempt${totalErrors > 1 ? 's' : ''}):</strong> Focus on accuracy in <strong>${opNames[mainWeakType]} (${opSymbols[mainWeakType]})</strong>.`;
+      }
     }
 
-    document.getElementById('score-val').textContent = `${totalCorrect} / ${totalAnswered}`;
-    document.getElementById('unanswered-val').textContent = totalUnanswered;
+    document.getElementById('score-val').textContent = `${totalAnswered} / 100`;
+    document.getElementById('errors-val').textContent = totalErrors;
     document.getElementById('ppm-val').textContent = ppm;
     document.getElementById('rec-val').innerHTML = recText;
 
     const errorContainer = document.getElementById('incorrect-list');
     errorContainer.innerHTML = '';
 
-    if (incorrectQuestions.length === 0) {
-      errorContainer.innerHTML = '<p style="color: #166534; font-size: 0.9rem; font-weight: 600; text-align: center; padding: 10px;">No incorrect answers!</p>';
+    if (attemptErrors.length === 0) {
+      errorContainer.innerHTML = '<p style="color: #166534; font-size: 0.9rem; font-weight: 700; text-align: center; padding: 10px;">No wrong input attempts recorded!</p>';
     } else {
-      incorrectQuestions.forEach(item => {
+      attemptErrors.forEach(item => {
         const row = document.createElement('div');
         row.className = 'error-item';
         row.innerHTML = `
-          <span class="error-q">${item.text} =</span>
+          <span class="error-q">${item.qText} =</span>
           <div>
-            <span class="error-user">${item.userAns}</span>
+            <span class="error-user">${item.wrongInput}</span>
             <span class="error-correct">→ ${item.correctAns}</span>
           </div>
         `;
@@ -865,23 +1045,351 @@
     isRunning = false;
     activeIndex = 0;
     userAnswers = {};
+    attemptErrors = [];
+    currentStreak = 0;
     diffLevels = { add: 1, sub: 1, mul: 3, div: 3 };
 
     document.getElementById('timer-display').textContent = '03:00';
-    document.getElementById('timer-display').classList.remove('timer-warning');
     document.getElementById('progress-display').textContent = '0 / 100';
     document.getElementById('start-btn').classList.remove('hidden');
     document.getElementById('setup-panel').classList.remove('disabled-panel');
     document.getElementById('summary-modal').style.display = 'none';
 
+    updateStreakUI();
     createQuestionSet();
     renderQuestions();
   }
 
-  // Initializing application state on load
+  // Initial load initialization
   renderOrderChips();
   createQuestionSet();
   renderQuestions();
+</script>
+
+<script>
+  (function initBallEngine() {
+    const canvas = document.getElementById('game-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    const platformY = 280;
+    const centerX = width / 2;
+    const baseBallY = platformY - 24; // Ball radius ~ 24px
+
+    let particles = [];
+    let prevT = 0;
+    let hueRotation = 0;
+
+    /* Custom keyframed deformation scaling for squish and stretch */
+    function getScaleKeyframe(t) {
+      if (t < 0.15) {
+        let k = t / 0.15;
+        return { sx: 1.3 + k * (0.85 - 1.3), sy: 0.7 + k * (1.2 - 0.7) };
+      } else if (t < 0.50) {
+        let k = (t - 0.15) / 0.35;
+        return { sx: 0.85 + k * (1.0 - 0.85), sy: 1.2 + k * (1.0 - 1.2) };
+      } else if (t < 0.85) {
+        let k = (t - 0.50) / 0.35;
+        return { sx: 1.0 + k * (0.85 - 1.0), sy: 1.0 + k * (1.2 - 1.0) };
+      } else {
+        let k = (t - 0.85) / 0.15;
+        return { sx: 0.85 + k * (1.3 - 0.85), sy: 1.2 + k * (0.7 - 1.2) };
+      }
+    }
+
+    /* Custom cubic-bezier(0.45, 0, 0.55, 1) ease approximation for smooth displacement */
+    function cubicBezierSmooth(t) {
+      let phase = t <= 0.5 ? t * 2 : (1 - t) * 2;
+      return Math.pow(phase, 1.8) * (3 - 2 * phase);
+    }
+
+    /* Global handler for 360-degree red explosion on wrong answer */
+    window.triggerRedExplosion = function() {
+      for (let i = 0; i < 35; i++) {
+        let angle = Math.random() * Math.PI * 2;
+        let speed = 2 + Math.random() * 6;
+        particles.push({
+          x: centerX,
+          y: baseBallY - 15,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          radius: 3 + Math.random() * 5,
+          color: Math.random() > 0.3 ? '#ef4444' : '#f97316',
+          life: 1.0,
+          decay: 0.03 + Math.random() * 0.03,
+          type: 'redBurst'
+        });
+      }
+    };
+
+    function renderFrame(time) {
+      ctx.clearRect(0, 0, width, height);
+
+      // Loop duration = 0.75s (750ms)
+      const loopTime = 750;
+      let progress = (time % loopTime) / loopTime;
+
+      // Particle frame rate acceleration based on active streak
+      let speedMult = 1 + Math.min(2, currentStreak * 0.03);
+
+      // 38px upward displacement
+      let bounceHeight = cubicBezierSmooth(progress) * 38;
+      let ballY = baseBallY - bounceHeight;
+      let scale = getScaleKeyframe(progress);
+
+      // Level 1: Apex star burst (at t ≈ 0.50)
+      if (prevT < 0.5 && progress >= 0.5) {
+        if (currentStreak >= 5) {
+          let numStars = 3 + Math.floor(Math.random() * 3);
+          for (let i = 0; i < numStars; i++) {
+            particles.push({
+              x: centerX + (Math.random() - 0.5) * 20,
+              y: ballY - 10,
+              vx: (Math.random() - 0.5) * 1.5,
+              vy: -1 - Math.random() * 1.5,
+              radius: 2 + Math.random() * 3,
+              color: '#70c5ce',
+              life: 1.0,
+              decay: 0.025,
+              type: 'star'
+            });
+          }
+        }
+      }
+
+      // Level 3 & Level 4: Landing shockwaves and horizontal bursts (at t ≈ 0.0)
+      if (prevT > 0.85 && progress < 0.15) {
+        if (currentStreak >= 20) {
+          particles.push({
+            x: centerX,
+            y: platformY,
+            radius: 10,
+            maxRadius: 45,
+            color: '#38bdf8',
+            life: 1.0,
+            decay: 0.05,
+            type: 'shockwave'
+          });
+        }
+        if (currentStreak >= 30) {
+          for (let i = 0; i < 12; i++) {
+            let dir = i % 2 === 0 ? 1 : -1;
+            particles.push({
+              x: centerX,
+              y: platformY - 2,
+              vx: dir * (2 + Math.random() * 4),
+              vy: (Math.random() - 0.5) * 1,
+              radius: 2 + Math.random() * 3,
+              color: '#a855f7',
+              life: 1.0,
+              decay: 0.04,
+              type: 'cosmicBurst'
+            });
+          }
+        }
+      }
+
+      prevT = progress;
+
+      // Draw Base Platform
+      ctx.save();
+      ctx.fillStyle = '#334155';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+      ctx.shadowBlur = 8;
+      ctx.fillRect(40, platformY, width - 80, 10);
+      ctx.restore();
+
+      // Draw Dynamic Ball Shadow
+      ctx.save();
+      let shadowScale = 1 - (bounceHeight / 38) * 0.4;
+      let shadowAlpha = 0.4 - (bounceHeight / 38) * 0.25;
+      ctx.fillStyle = `rgba(15, 23, 42, ${shadowAlpha})`;
+      ctx.beginPath();
+      ctx.ellipse(centerX, platformY + 2, 22 * shadowScale * scale.sx, 6 * shadowScale, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Level 2: Inferno Embers
+      if (currentStreak >= 10 && Math.random() < 0.6) {
+        particles.push({
+          x: centerX + (Math.random() - 0.5) * 24,
+          y: ballY + 10,
+          vx: (Math.random() - 0.5) * 1.2,
+          vy: -1.5 - Math.random() * 2,
+          radius: 2 + Math.random() * 3,
+          color: Math.random() > 0.4 ? '#f97316' : '#ef4444',
+          life: 1.0,
+          decay: 0.035,
+          type: 'ember'
+        });
+      }
+
+      // Level 4 & 5: Nebula & Matrix Grid Trails
+      if (currentStreak >= 30 && Math.random() < 0.7) {
+        particles.push({
+          x: centerX + (Math.random() - 0.5) * 28,
+          y: ballY + (Math.random() - 0.5) * 20,
+          vx: (Math.random() - 0.5) * 0.8,
+          vy: 0.5 + Math.random() * 1.5,
+          radius: 3 + Math.random() * 4,
+          color: currentStreak >= 40 ? '#22d3ee' : '#ec4899',
+          life: 1.0,
+          decay: 0.03,
+          type: 'trail'
+        });
+      }
+
+      // Update & Render Active Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.life -= p.decay * speedMult;
+
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.life);
+
+        if (p.type === 'shockwave') {
+          p.radius += (p.maxRadius - p.radius) * 0.15;
+          ctx.strokeStyle = p.color;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.ellipse(p.x, p.y, p.radius, p.radius * 0.3, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          p.x += p.vx;
+          p.y += p.vy;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      ctx.save();
+      ctx.translate(centerX, ballY);
+      ctx.scale(scale.sx, scale.sy);
+
+      const r = 22;
+
+      // LEVEL 0 (0-4): Standard Blue Ball
+      if (currentStreak < 5) {
+        let grad = ctx.createRadialGradient(-6, -6, 2, 0, 0, r);
+        grad.addColorStop(0, '#60a5fa');
+        grad.addColorStop(1, '#1d4ed8');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // LEVEL 1 (5-9): Teal Glow Ball
+      else if (currentStreak < 10) {
+        ctx.shadowColor = '#70c5ce';
+        ctx.shadowBlur = 12;
+        let grad = ctx.createRadialGradient(-6, -6, 2, 0, 0, r);
+        grad.addColorStop(0, '#a5f3fc');
+        grad.addColorStop(1, '#0891b2');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // LEVEL 2 (10-19): Inferno Fireball
+      else if (currentStreak < 20) {
+        ctx.shadowColor = '#f97316';
+        ctx.shadowBlur = 18;
+        let grad = ctx.createRadialGradient(-4, -4, 2, 0, 0, r);
+        grad.addColorStop(0, '#fef08a');
+        grad.addColorStop(0.5, '#f97316');
+        grad.addColorStop(1, '#dc2626');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // LEVEL 3 (20-29): Ball Lightning
+      else if (currentStreak < 30) {
+        let pulse = (Math.sin(time / 25) + 1) / 2;
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 15 + pulse * 10;
+
+        let grad = ctx.createRadialGradient(-4, -4, 2, 0, 0, r);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.4, '#7dd3fc');
+        grad.addColorStop(1, '#0284c7');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Perimeter electric arcs
+        ctx.strokeStyle = '#e0f2fe';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+          let jitter = (Math.random() - 0.5) * 6;
+          let ax = Math.cos(a) * (r + jitter);
+          let ay = Math.sin(a) * (r + jitter);
+          if (a === 0) ctx.moveTo(ax, ay);
+          else ctx.lineTo(ax, ay);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      }
+      // LEVEL 4 (30-39): Cosmic Supernova
+      else if (currentStreak < 40) {
+        hueRotation = (hueRotation + 2) % 360;
+
+        ctx.fillStyle = `hsl(${hueRotation + 180}, 90%, 60%)`;
+        ctx.beginPath();
+        ctx.arc(-3, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        let grad = ctx.createRadialGradient(-4, -4, 2, 0, 0, r);
+        grad.addColorStop(0, '#f472b6');
+        grad.addColorStop(1, '#8b5cf6');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // LEVEL 5+ (40+): Digital Phase-Shift
+      else {
+        let stepColor = Math.floor(time / 100) % 2 === 0 ? '#22d3ee' : '#f43f5e';
+        ctx.shadowColor = stepColor;
+        ctx.shadowBlur = 22;
+
+        let grad = ctx.createRadialGradient(0, 0, 2, 0, 0, r);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.6, stepColor);
+        grad.addColorStop(1, '#0f172a');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = stepColor;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.arc(0, 0, r + 6, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+
+      requestAnimationFrame(renderFrame);
+    }
+
+    requestAnimationFrame(renderFrame);
+  })();
 </script>
 </body>
 </html>
