@@ -238,7 +238,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    height: 348px; /* 5 rows x 60px + 4 gaps x 12px */
+    height: 348px;
     overflow: hidden;
     scroll-behavior: smooth;
     padding-right: 2px;
@@ -374,8 +374,8 @@
   .summary-card {
     background: white;
     width: 100%;
-    max-width: 580px;
-    max-height: 90vh;
+    max-width: 620px;
+    max-height: 92vh;
     overflow-y: auto;
     border-radius: 16px;
     padding: 24px 28px;
@@ -401,17 +401,18 @@
   .metric-value { font-size: 1.35rem; font-weight: 800; color: var(--accent); }
   .metric-title { font-size: 0.65rem; color: var(--text-secondary); margin-top: 4px; text-transform: uppercase; font-weight: 700; }
 
-  /* Final Mascot Display in Summary Modal */
+  /* Final Mascot Tier Showcase & Gallery */
   .final-ball-card {
     background: #0f172a;
     border-radius: 12px;
     border: 1px solid #1e293b;
-    padding: 12px;
+    padding: 14px;
     display: flex;
     flex-direction: column;
     align-items: center;
     margin-bottom: 18px;
     box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.4);
+    width: 100%;
   }
 
   .final-ball-header {
@@ -419,8 +420,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 6px;
-    padding: 0 8px;
+    margin-bottom: 8px;
+    padding: 0 4px;
   }
 
   .final-ball-title {
@@ -439,12 +440,94 @@
 
   #summary-canvas {
     width: 220px;
-    height: 180px;
+    height: 160px;
     background: radial-gradient(circle at 50% 30%, #1e293b 0%, #0f172a 100%);
     border-radius: 8px;
     border: 1px solid #334155;
     display: block;
+    margin-bottom: 12px;
   }
+
+  /* Unlocked / Locked Ball Gallery Selector */
+  .gallery-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    width: 100%;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .ball-gallery {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 6px 2px 10px 2px;
+    width: 100%;
+    scroll-behavior: smooth;
+  }
+
+  .ball-gallery::-webkit-scrollbar {
+    height: 6px;
+  }
+  .ball-gallery::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 3px;
+  }
+
+  .ball-chip {
+    flex: 0 0 auto;
+    background: #1e293b;
+    border: 2px solid #334155;
+    border-radius: 8px;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 82px;
+    user-select: none;
+  }
+
+  .ball-chip.unlocked {
+    border-color: #38bdf8;
+    color: #f8fafc;
+  }
+
+  .ball-chip.unlocked:hover {
+    border-color: #60a5fa;
+    background: #334155;
+  }
+
+  .ball-chip.selected {
+    border-color: #f59e0b !important;
+    background: rgba(245, 158, 11, 0.15) !important;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
+  }
+
+  .ball-chip.locked {
+    opacity: 0.6;
+    cursor: pointer;
+    background: #0f172a;
+    border-color: #1e293b;
+    filter: grayscale(80%);
+  }
+
+  .ball-chip.locked:hover {
+    opacity: 0.85;
+    border-color: #475569;
+    background: #1e293b;
+  }
+
+  .chip-level { font-size: 0.68rem; font-weight: 800; color: #94a3b8; }
+  .chip-icon { font-size: 1.1rem; margin: 2px 0; }
+  .chip-name { font-size: 0.65rem; color: #cbd5e1; font-weight: 700; text-align: center; white-space: nowrap; }
+  .chip-req { font-size: 0.6rem; color: #e2e8f0; font-weight: 800; margin-top: 2px; }
 
   .recommendation-box {
     background: #f0fdf4;
@@ -576,13 +659,20 @@
       </div>
     </div>
 
-    <!-- Final Mascot Tier Showcase -->
+    <!-- Final Mascot Tier Showcase & Interactive Unlocked Collection Grid -->
     <div class="final-ball-card">
       <div class="final-ball-header">
-        <span class="final-ball-title">Highest Unlocked Ball</span>
-        <span class="final-ball-tier" id="summary-tier-name">Level 0</span>
+        <span class="final-ball-title">Ball Preview</span>
+        <span class="final-ball-tier" id="summary-tier-name">Level 0: Starter Blue</span>
       </div>
-      <canvas id="summary-canvas" width="220" height="180"></canvas>
+      
+      <canvas id="summary-canvas" width="220" height="160"></canvas>
+
+      <div class="gallery-label">
+        <span>Unlocked Collection</span>
+        <span id="unlocked-count-label" style="color: #38bdf8;">0 / 11 Unlocked</span>
+      </div>
+      <div class="ball-gallery" id="ball-gallery-grid"></div>
     </div>
 
     <div class="recommendation-box" id="rec-val"></div>
@@ -597,9 +687,25 @@
 </div>
 
 <script>
+  // All 11 Ball Tier Definitions
+  const BALL_TIERS = [
+    { level: 0, reqStreak: 0,  name: "Starter Blue" },
+    { level: 1, reqStreak: 5,  name: "Teal Glow" },
+    { level: 2, reqStreak: 10, name: "Inferno Fireball" },
+    { level: 3, reqStreak: 20, name: "Ball Lightning" },
+    { level: 4, reqStreak: 30, name: "Cosmic Supernova" },
+    { level: 5, reqStreak: 40, name: "Digital Phase-Shift" },
+    { level: 6, reqStreak: 50, name: "Solar Flare Core" },
+    { level: 7, reqStreak: 60, name: "Quantum Void Singularity" },
+    { level: 8, reqStreak: 70, name: "Hyperdrive Cyber-Crystal" },
+    { level: 9, reqStreak: 80, name: "Celestial Phoenix" },
+    { level: 10, reqStreak: 90, name: "Multiverse Singularity" }
+  ];
+
   let questions = [];
   let userAnswers = {};
-  let attemptErrors = []; // Records failed attempts
+  let attemptedQIds = new Set();
+  let attemptErrors = []; 
   let timerInterval = null;
   let timeLeft = 180;
   let isRunning = false;
@@ -608,9 +714,13 @@
   let isShaking = false;
   let currentStreak = 0;
   let highestStreak = 0;
+  let selectedSummaryStreak = 0;
   let lives = 3;
   const MAX_LIVES = 3;
   let isGameModeOn = true;
+
+  // Track persistent high score / streak unlocks across test attempts
+  let persistentMaxStreak = parseInt(localStorage.getItem('mathTest_maxStreak') || '0', 10);
 
   const opSymbols = { add: '+', sub: '−', mul: '×', div: '÷' };
   const opNames = { add: 'Addition', sub: 'Subtraction', mul: 'Multiplication', div: 'Division' };
@@ -854,16 +964,16 @@
 
     const val = inputElem.value.trim();
 
-    // Empty input: allow navigation without penalty
     if (val === '') {
       return true;
     }
+
+    attemptedQIds.add(q.id);
 
     const numVal = parseInt(val, 10);
     const isCorrect = numVal === q.answer;
 
     if (isCorrect) {
-      // Correct answer: store answer & advance streak
       userAnswers[q.id] = val;
       inputElem.classList.remove('shake-box');
       inputElem.classList.add('correct-box');
@@ -879,7 +989,6 @@
       return true;
 
     } else {
-      // Incorrect attempt: record error attempt
       attemptErrors.push({
         qText: q.text,
         wrongInput: val,
@@ -888,14 +997,12 @@
         subType: q.subType
       });
 
-      // 3 Lives System: deduct a life
       lives--;
       updateLivesUI();
 
       if (lives <= 0) {
-        // Lost all 3 lives -> reset streak & trigger explosion
         resetStreakAndTriggerExplosion();
-        lives = MAX_LIVES; // Reset lives for the new streak attempt
+        lives = MAX_LIVES; 
         updateLivesUI();
       }
 
@@ -1019,19 +1126,20 @@
     document.getElementById('lives-display').textContent = hearts;
   }
 
-  function getTierTitle(streakVal) {
-    if (streakVal >= 40) return "Level 5";
-    if (streakVal >= 30) return "Level 4";
-    if (streakVal >= 20) return "Level 3";
-    if (streakVal >= 10) return "Level 2";
-    if (streakVal >= 5)  return "Level 1";
-    return "Level 0";
+  function getTierInfo(streakVal) {
+    for (let i = BALL_TIERS.length - 1; i >= 0; i--) {
+      if (streakVal >= BALL_TIERS[i].reqStreak) {
+        return BALL_TIERS[i];
+      }
+    }
+    return BALL_TIERS[0];
   }
 
   function updateStreakUI() {
+    let tier = getTierInfo(currentStreak);
     document.getElementById('header-streak-val').textContent = currentStreak;
     document.getElementById('tier-streak-display').textContent = `STREAK: ${currentStreak}`;
-    document.getElementById('tier-title-display').textContent = getTierTitle(currentStreak);
+    document.getElementById('tier-title-display').textContent = `Level ${tier.level}`;
   }
 
   function toggleGameMode() {
@@ -1075,14 +1183,69 @@
     document.getElementById('timer-display').textContent = display;
   }
 
+  function renderBallGallery() {
+    const container = document.getElementById('ball-gallery-grid');
+    if (!container) return;
+    container.innerHTML = '';
+
+    let unlockedCount = 0;
+
+    BALL_TIERS.forEach(tier => {
+      const isUnlocked = persistentMaxStreak >= tier.reqStreak;
+      if (isUnlocked) unlockedCount++;
+
+      const selectedTier = getTierInfo(selectedSummaryStreak);
+      const isSelected = selectedTier.level === tier.level;
+
+      const chip = document.createElement('div');
+      chip.className = `ball-chip ${isUnlocked ? 'unlocked' : 'locked'} ${isSelected ? 'selected' : ''}`;
+      
+      chip.innerHTML = `
+        <span class="chip-level">Lvl ${tier.level}</span>
+        <span class="chip-icon">${isUnlocked ? (isSelected ? '✨' : '⚽') : '🔒'}</span>
+        <span class="chip-name">${tier.name}</span>
+        <span class="chip-req">${isUnlocked ? 'Unlocked' : 'Streak ' + tier.reqStreak}</span>
+      `;
+
+      chip.addEventListener('click', () => {
+        selectedSummaryStreak = tier.reqStreak;
+        const isTierUnlocked = persistentMaxStreak >= tier.reqStreak;
+        document.getElementById('summary-tier-name').textContent = `Level ${tier.level}: ${tier.name}${isTierUnlocked ? '' : ' 🔒'}`;
+        renderBallGallery();
+      });
+
+      container.appendChild(chip);
+    });
+
+    document.getElementById('unlocked-count-label').textContent = `${unlockedCount} / ${BALL_TIERS.length} Unlocked`;
+  }
+
   function finishTest() {
     validateCurrentQuestion(activeIndex);
+
+    questions.forEach((q, idx) => {
+      const inputElem = document.getElementById(`input-${idx}`);
+      if (inputElem && inputElem.value.trim() !== '') {
+        attemptedQIds.add(q.id);
+      }
+    });
 
     clearInterval(timerInterval);
     isRunning = false;
 
+    if (highestStreak > persistentMaxStreak) {
+      persistentMaxStreak = highestStreak;
+      localStorage.setItem('mathTest_maxStreak', persistentMaxStreak.toString());
+    }
+
+    selectedSummaryStreak = highestStreak;
+    let initialTier = getTierInfo(selectedSummaryStreak);
+    const initialUnlocked = persistentMaxStreak >= initialTier.reqStreak;
+    document.getElementById('summary-tier-name').textContent = `Level ${initialTier.level}: ${initialTier.name}${initialUnlocked ? '' : ' 🔒'}`;
+
     const timeSpentSeconds = Math.max(1, 180 - timeLeft);
-    const totalAnswered = Object.keys(userAnswers).filter(k => userAnswers[k] !== '').length;
+    const correctCount = Object.keys(userAnswers).filter(k => userAnswers[k] !== '').length;
+    const totalAnswered = Math.max(correctCount, attemptedQIds.size);
     const ppm = Math.round((totalAnswered / timeSpentSeconds) * 60);
 
     let categoryErrors = { add: 0, sub: 0, mul: 0, div: 0 };
@@ -1100,8 +1263,8 @@
 
     if (totalErrors === 0 && totalAnswered > 0) {
       recBox.className = "recommendation-box";
-      recText = `🌟 <strong>Perfect accuracy!</strong> You answered ${totalAnswered} questions with zero wrong attempts and reached a max streak of ${highestStreak}!`;
-    } else if (totalErrors === 0 && totalAnswered === 0) {
+      recText = `🌟 <strong>Perfect accuracy!</strong> You answered ${totalAnswered} question${totalAnswered > 1 ? 's' : ''} with zero wrong attempts and reached a max streak of ${highestStreak}!`;
+    } else if (totalAnswered === 0) {
       recBox.className = "recommendation-box";
       recText = `<strong>No questions attempted.</strong> Press Start Test and type in your answers to begin practicing!`;
     } else {
@@ -1116,14 +1279,11 @@
       }
     }
 
-    document.getElementById('score-val').textContent = `${totalAnswered} / 100`;
+    document.getElementById('score-val').textContent = `${correctCount} / ${totalAnswered}`;
     document.getElementById('highest-streak-val').textContent = highestStreak;
     document.getElementById('errors-val').textContent = totalErrors;
     document.getElementById('ppm-val').textContent = ppm;
     document.getElementById('rec-val').innerHTML = recText;
-
-    // Set summary tier title
-    document.getElementById('summary-tier-name').textContent = `${getTierTitle(highestStreak)} (Streak ${highestStreak})`;
 
     const errorContainer = document.getElementById('incorrect-list');
     errorContainer.innerHTML = '';
@@ -1145,6 +1305,7 @@
       });
     }
 
+    renderBallGallery();
     document.getElementById('summary-modal').style.display = 'flex';
   }
 
@@ -1154,6 +1315,7 @@
     isRunning = false;
     activeIndex = 0;
     userAnswers = {};
+    attemptedQIds.clear();
     attemptErrors = [];
     currentStreak = 0;
     highestStreak = 0;
@@ -1180,7 +1342,7 @@
 </script>
 
 <script>
-  // Dynamic Ball Bounce Canvas Engine supporting both Main Game & Win Modal Preview
+  // Dynamic Ball Bounce Canvas Engine supporting Levels 0 through 10
   (function initBallEngines() {
     
     function createEngine(canvasId, getStreakFn) {
@@ -1242,21 +1404,32 @@
       function renderFrame(time) {
         const width = canvas.width;
         const height = canvas.height;
-        const platformY = height - 60;
+        const platformY = height - 55;
         const centerX = width / 2;
         const baseBallY = platformY - 22;
 
         ctx.clearRect(0, 0, width, height);
 
         const streak = getStreakFn();
+        const tier = getTierInfo(streak);
+        const isUnlocked = Math.max(streak, persistentMaxStreak) >= tier.reqStreak;
+        const isLocked = !isUnlocked;
+
         const loopTime = 750;
         let progress = (time % loopTime) / loopTime;
 
-        let speedMult = 1 + Math.min(2, streak * 0.03);
+        let speedMult = 1 + Math.min(2.5, streak * 0.03);
 
         let bounceHeight = cubicBezierSmooth(progress) * 34;
         let ballY = baseBallY - bounceHeight;
         let scale = getScaleKeyframe(progress);
+
+        // Save canvas context and apply greyscale + lower opacity if ball is locked
+        if (isLocked) {
+          ctx.save();
+          ctx.filter = 'grayscale(100%)';
+          ctx.globalAlpha = 0.35;
+        }
 
         // Level 1: Apex star burst
         if (prevT < 0.5 && progress >= 0.5 && streak >= 5) {
@@ -1276,7 +1449,7 @@
           }
         }
 
-        // Level 3 & Level 4: Landing shockwaves and horizontal bursts
+        // Landing shockwaves & impact bursts for higher levels
         if (prevT > 0.85 && progress < 0.15) {
           if (streak >= 20) {
             particles.push({
@@ -1306,6 +1479,57 @@
               });
             }
           }
+          if (streak >= 50) {
+            particles.push({
+              x: centerX,
+              y: platformY,
+              radius: 5,
+              maxRadius: 55,
+              color: '#f59e0b',
+              life: 1.0,
+              decay: 0.04,
+              type: 'shockwave'
+            });
+          }
+          if (streak >= 70) {
+            particles.push({
+              x: centerX,
+              y: platformY,
+              radius: 5,
+              maxRadius: 70,
+              color: '#10b981',
+              life: 1.0,
+              decay: 0.035,
+              type: 'shockwave'
+            });
+          }
+          if (streak >= 90) {
+            particles.push({
+              x: centerX,
+              y: platformY,
+              radius: 5,
+              maxRadius: 85,
+              color: '#ec4899',
+              life: 1.0,
+              decay: 0.03,
+              type: 'shockwave'
+            });
+            for (let i = 0; i < 14; i++) {
+              let angle = (i * Math.PI * 2) / 14;
+              let spd = 3 + Math.random() * 4;
+              particles.push({
+                x: centerX,
+                y: platformY - 2,
+                vx: Math.cos(angle) * spd,
+                vy: Math.sin(angle) * spd * 0.5,
+                radius: 3 + Math.random() * 3,
+                color: `hsl(${(i * 25) % 360}, 100%, 65%)`,
+                life: 1.0,
+                decay: 0.035,
+                type: 'infinity'
+              });
+            }
+          }
         }
 
         prevT = progress;
@@ -1315,7 +1539,7 @@
         ctx.fillStyle = '#334155';
         ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
         ctx.shadowBlur = 6;
-        ctx.fillRect(30, platformY, width - 60, 8);
+        ctx.fillRect(30, platformY, width - 60, 6);
         ctx.restore();
 
         // Draw Shadow
@@ -1328,8 +1552,8 @@
         ctx.fill();
         ctx.restore();
 
-        // Level 2: Inferno Embers
-        if (streak >= 10 && Math.random() < 0.6) {
+        // --- AMBIENT PARTICLES ---
+        if (streak >= 10 && streak < 20 && Math.random() < 0.6) {
           particles.push({
             x: centerX + (Math.random() - 0.5) * 22,
             y: ballY + 10,
@@ -1343,8 +1567,7 @@
           });
         }
 
-        // Level 4 & 5: Nebula & Matrix Grid Trails
-        if (streak >= 30 && Math.random() < 0.7) {
+        if (streak >= 30 && streak < 50 && Math.random() < 0.7) {
           particles.push({
             x: centerX + (Math.random() - 0.5) * 24,
             y: ballY + (Math.random() - 0.5) * 18,
@@ -1358,7 +1581,78 @@
           });
         }
 
-        // Render Particles
+        if (streak >= 50 && streak < 60 && Math.random() < 0.75) {
+          particles.push({
+            x: centerX + (Math.random() - 0.5) * 26,
+            y: ballY + (Math.random() - 0.5) * 20,
+            vx: (Math.random() - 0.5) * 2,
+            vy: -2 - Math.random() * 2,
+            radius: 2 + Math.random() * 4,
+            color: Math.random() > 0.5 ? '#fde047' : '#f97316',
+            life: 1.0,
+            decay: 0.04,
+            type: 'solar'
+          });
+        }
+
+        if (streak >= 60 && streak < 70 && Math.random() < 0.8) {
+          particles.push({
+            x: centerX + (Math.random() - 0.5) * 35,
+            y: ballY + (Math.random() - 0.5) * 35,
+            vx: (Math.random() - 0.5) * 1.5,
+            vy: (Math.random() - 0.5) * 1.5,
+            radius: 1.5 + Math.random() * 3,
+            color: Math.random() > 0.5 ? '#06b6d4' : '#ec4899',
+            life: 1.0,
+            decay: 0.035,
+            type: 'void'
+          });
+        }
+
+        if (streak >= 70 && streak < 80 && Math.random() < 0.85) {
+          particles.push({
+            x: centerX + (Math.random() - 0.5) * 28,
+            y: ballY + (Math.random() - 0.5) * 28,
+            vx: (Math.random() - 0.5) * 3,
+            vy: (Math.random() - 0.5) * 3,
+            radius: 2 + Math.random() * 3.5,
+            color: Math.random() > 0.5 ? '#34d399' : '#a855f7',
+            life: 1.0,
+            decay: 0.045,
+            type: 'crystal'
+          });
+        }
+
+        if (streak >= 80 && streak < 90 && Math.random() < 0.85) {
+          particles.push({
+            x: centerX + (Math.random() - 0.5) * 24,
+            y: ballY + 10,
+            vx: (Math.random() - 0.5) * 1.8,
+            vy: -2.5 - Math.random() * 2.5,
+            radius: 2.5 + Math.random() * 4,
+            color: Math.random() > 0.4 ? '#fbbf24' : '#f43f5e',
+            life: 1.0,
+            decay: 0.03,
+            type: 'phoenix'
+          });
+        }
+
+        if (streak >= 90 && Math.random() < 0.95) {
+          let hueP = Math.random() * 360;
+          particles.push({
+            x: centerX + (Math.random() - 0.5) * 30,
+            y: ballY + (Math.random() - 0.5) * 30,
+            vx: (Math.random() - 0.5) * 3.5,
+            vy: (Math.random() - 0.5) * 3.5,
+            radius: 2 + Math.random() * 4,
+            color: `hsl(${hueP}, 100%, 70%)`,
+            life: 1.0,
+            decay: 0.03,
+            type: 'infinity'
+          });
+        }
+
+        // Render Active Particles
         for (let i = particles.length - 1; i >= 0; i--) {
           let p = particles[i];
           p.life -= p.decay * speedMult;
@@ -1369,7 +1663,7 @@
           }
 
           ctx.save();
-          ctx.globalAlpha = Math.max(0, p.life);
+          ctx.globalAlpha = Math.max(0, p.life) * (isLocked ? 0.35 : 1.0);
 
           if (p.type === 'shockwave') {
             p.radius += (p.maxRadius - p.radius) * 0.15;
@@ -1389,6 +1683,7 @@
           ctx.restore();
         }
 
+        // Render Main Mascot Ball
         ctx.save();
         ctx.translate(centerX, ballY);
         ctx.scale(scale.sx, scale.sy);
@@ -1475,8 +1770,8 @@
           ctx.arc(0, 0, r, 0, Math.PI * 2);
           ctx.fill();
         }
-        // LEVEL 5+ (40+): Digital Phase-Shift
-        else {
+        // LEVEL 5 (40-49): Digital Phase-Shift
+        else if (streak < 50) {
           let stepColor = Math.floor(time / 100) % 2 === 0 ? '#22d3ee' : '#f43f5e';
           ctx.shadowColor = stepColor;
           ctx.shadowBlur = 18;
@@ -1496,9 +1791,236 @@
           ctx.beginPath();
           ctx.arc(0, 0, r + 5, 0, Math.PI * 2);
           ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        // LEVEL 6 (50-59): Solar Flare Core
+        else if (streak < 60) {
+          ctx.shadowColor = '#fbbf24';
+          ctx.shadowBlur = 22;
+
+          let grad = ctx.createRadialGradient(-4, -4, 2, 0, 0, r);
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(0.3, '#fde047');
+          grad.addColorStop(0.7, '#f59e0b');
+          grad.addColorStop(1, '#b45309');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(0, 0, r, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.save();
+          ctx.rotate(time * 0.003);
+          ctx.strokeStyle = '#fef08a';
+          ctx.lineWidth = 2.5;
+          for (let i = 0; i < 4; i++) {
+            ctx.beginPath();
+            ctx.arc(0, 0, r + 5, i * (Math.PI / 2), i * (Math.PI / 2) + Math.PI / 4);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+        // LEVEL 7 (60-69): Quantum Void Singularity
+        else if (streak < 70) {
+          ctx.shadowColor = '#ec4899';
+          ctx.shadowBlur = 25;
+
+          let spin = time * 0.005;
+          ctx.save();
+          ctx.rotate(spin);
+          ctx.strokeStyle = '#06b6d4';
+          ctx.lineWidth = 3.5;
+          ctx.beginPath();
+          ctx.arc(0, 0, r + 5, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+
+          let voidGrad = ctx.createRadialGradient(0, 0, 1, 0, 0, r);
+          voidGrad.addColorStop(0, '#000000');
+          voidGrad.addColorStop(0.65, '#0f172a');
+          voidGrad.addColorStop(0.85, '#831843');
+          voidGrad.addColorStop(1, '#06b6d4');
+          ctx.fillStyle = voidGrad;
+          ctx.beginPath();
+          ctx.arc(0, 0, r, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(0, 0, 3 + Math.sin(time / 50) * 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // LEVEL 8 (70-79): Hyperdrive Cyber-Crystal
+        else if (streak < 80) {
+          ctx.shadowColor = '#10b981';
+          ctx.shadowBlur = 25;
+
+          ctx.save();
+          ctx.rotate(time * 0.004);
+          ctx.strokeStyle = '#34d399';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          for (let i = 0; i < 6; i++) {
+            let angle = (i * Math.PI) / 3;
+            let rad = (i % 2 === 0) ? r + 7 : r + 2;
+            let x = Math.cos(angle) * rad;
+            let y = Math.sin(angle) * rad;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.closePath();
+          ctx.stroke();
+          ctx.restore();
+
+          let grad = ctx.createLinearGradient(-r, -r, r, r);
+          grad.addColorStop(0, '#6ee7b7');
+          grad.addColorStop(0.5, '#3b82f6');
+          grad.addColorStop(1, '#a855f7');
+          ctx.fillStyle = grad;
+
+          ctx.beginPath();
+          let numFacets = 8;
+          for (let i = 0; i < numFacets; i++) {
+            let angle = (i * Math.PI * 2) / numFacets;
+            let x = Math.cos(angle) * r;
+            let y = Math.sin(angle) * r;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(-r * 0.4, 0); ctx.lineTo(r * 0.4, 0);
+          ctx.moveTo(0, -r * 0.4); ctx.lineTo(0, r * 0.4);
+          ctx.stroke();
+        }
+        // LEVEL 9 (80-89): Celestial Phoenix
+        else if (streak < 90) {
+          let pulse = Math.sin(time / 40) * 4;
+          ctx.shadowColor = '#f59e0b';
+          ctx.shadowBlur = 28 + pulse;
+
+          ctx.save();
+          ctx.rotate(-time * 0.003);
+          ctx.strokeStyle = 'rgba(251, 191, 36, 0.85)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, r + 7, r + 2, Math.PI / 4, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+
+          ctx.save();
+          ctx.rotate(time * 0.003);
+          ctx.strokeStyle = 'rgba(244, 114, 182, 0.85)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, r + 7, r + 2, -Math.PI / 4, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+
+          let grad = ctx.createRadialGradient(-3, -3, 1, 0, 0, r);
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(0.3, '#fef08a');
+          grad.addColorStop(0.7, '#f59e0b');
+          grad.addColorStop(1, '#be185d');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(0, 0, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // LEVEL 10 (90+): Multiverse Singularity
+        else {
+          let hue = (time * 0.15) % 360;
+          ctx.shadowColor = `hsl(${hue}, 100%, 65%)`;
+          ctx.shadowBlur = 32;
+
+          for (let i = 0; i < 3; i++) {
+            let orbAngle = (time * 0.006) + (i * Math.PI * 2 / 3);
+            let orbX = Math.cos(orbAngle) * (r + 9);
+            let orbY = Math.sin(orbAngle) * (r + 9) * 0.5;
+            ctx.fillStyle = `hsl(${(hue + i * 120) % 360}, 100%, 75%)`;
+            ctx.beginPath();
+            ctx.arc(orbX, orbY, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          ctx.strokeStyle = `hsl(${(hue + 180) % 360}, 100%, 70%)`;
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(0, 0, r + 4, 0, Math.PI * 2);
+          ctx.stroke();
+
+          let grad = ctx.createRadialGradient(-3, -3, 2, 0, 0, r);
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(0.4, `hsl(${hue}, 100%, 70%)`);
+          grad.addColorStop(0.8, `hsl(${(hue + 120) % 360}, 100%, 40%)`);
+          grad.addColorStop(1, '#09090b');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(0, 0, r, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 12px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('★', 0, 0);
         }
 
         ctx.restore();
+
+        // Restore context if locked and overlay a padlock on top of the obscured ball
+        if (isLocked) {
+          ctx.restore();
+
+          ctx.save();
+          
+          // Semi-transparent backdrop circle behind lock
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+          ctx.beginPath();
+          ctx.arc(centerX, ballY, 18, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Padlock Shackle
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(centerX, ballY - 5, 7, Math.PI, 0);
+          ctx.lineTo(centerX + 7, ballY + 2);
+          ctx.moveTo(centerX - 7, ballY - 5);
+          ctx.lineTo(centerX - 7, ballY + 2);
+          ctx.stroke();
+
+          // Padlock Body
+          ctx.fillStyle = '#475569';
+          ctx.strokeStyle = '#94a3b8';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          if (ctx.roundRect) {
+            ctx.roundRect(centerX - 9, ballY + 1, 18, 14, 3);
+          } else {
+            ctx.rect(centerX - 9, ballY + 1, 18, 14);
+          }
+          ctx.fill();
+          ctx.stroke();
+
+          // Keyhole
+          ctx.fillStyle = '#0f172a';
+          ctx.beginPath();
+          ctx.arc(centerX, ballY + 6, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(centerX - 1.5, ballY + 7);
+          ctx.lineTo(centerX + 1.5, ballY + 7);
+          ctx.lineTo(centerX + 2, ballY + 11);
+          ctx.lineTo(centerX - 2, ballY + 11);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.restore();
+        }
 
         requestAnimationFrame(renderFrame);
       }
@@ -1506,10 +2028,10 @@
       requestAnimationFrame(renderFrame);
     }
 
-    // Initialize Active Main Canvas and Summary Modal Canvas
+    // Initialize Canvas Engines
     createEngine('game-canvas', () => currentStreak);
-    createEngine('summary-canvas', () => highestStreak);
+    createEngine('summary-canvas', () => selectedSummaryStreak);
   })();
 </script>
 </body>
-</html>
+</html> 
