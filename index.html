@@ -720,7 +720,7 @@
   let isGameModeOn = true;
 
   // Track persistent high score / streak unlocks across test attempts
-  let persistentMaxStreak = parseInt(localStorage.getItem('mathTest_maxStreak') || '0', 10);
+  let persistentMaxStreak = 0;
 
   const opSymbols = { add: '+', sub: '−', mul: '×', div: '÷' };
   const opNames = { add: 'Addition', sub: 'Subtraction', mul: 'Multiplication', div: 'Division' };
@@ -1234,8 +1234,7 @@
     isRunning = false;
 
     if (highestStreak > persistentMaxStreak) {
-      persistentMaxStreak = highestStreak;
-      localStorage.setItem('mathTest_maxStreak', persistentMaxStreak.toString());
+  persistentMaxStreak = highestStreak;
     }
 
     selectedSummaryStreak = highestStreak;
