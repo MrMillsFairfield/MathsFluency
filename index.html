@@ -605,7 +605,7 @@
   </div>
 
   <div class="header-controls">
-    <button class="toggle-game-btn active" id="game-toggle-btn" onclick="toggleGameMode()">
+    <button class="toggle-game-btn" id="game-toggle-btn" onclick="toggleGameMode()">
       🪩
     </button>
     <button id="start-btn" class="start-btn" onclick="startTest()">Start Test</button>
@@ -618,7 +618,7 @@
     <div class="setup-panel" id="setup-panel">
       <div class="setup-header">
         <span class="setup-title" id="setup-title">Drag to set order</span>
-        <button class="shuffle-btn" onclick="randomizeOrderUI()">🔀 Randomize All</button>
+        <button class="shuffle-btn" onclick="randomizeOrderUI()">🔀 Randomise All</button>
       </div>
       <div class="order-chips" id="order-chips"></div>
     </div>
@@ -627,7 +627,7 @@
   </div>
 
   <!-- Right Side: Interactive Bouncing Ball Game Canvas -->
-  <div class="game-pane" id="game-pane">
+  <div class="game-pane" id="game-pane" style="display: none;">
     <div class="game-header-bar">
       <span class="game-tier-title" id="tier-title-display">Level 0</span>
       <span class="game-streak-counter" id="tier-streak-display">STREAK: 0</span>
@@ -717,7 +717,7 @@
   let selectedSummaryStreak = 0;
   let lives = 3;
   const MAX_LIVES = 3;
-  let isGameModeOn = true;
+  let isGameModeOn = false;
 
   // Track persistent high score / streak unlocks across test attempts
   let persistentMaxStreak = 0;
@@ -826,9 +826,99 @@
     renderQuestions();
   }
 
-  function generateFact(type) {
-    let level = diffLevels[type];
+  function generateFact(type, qIndex = 0) {
     let num1, num2, answer, text, subType;
+
+    if (isFullyRandomized) {
+      if (qIndex < 10) {
+        // Tier 1: First 10 (Relatively Easy)
+        if (type === 'add') {
+          num1 = randomInt(1, 20);
+          num2 = randomInt(1, 9);
+          answer = num1 + num2;
+          text = `${num1} + ${num2}`;
+          subType = `Easy Addition`;
+        } else if (type === 'sub') {
+          num1 = randomInt(10, 30);
+          num2 = randomInt(1, 9);
+          answer = num1 - num2;
+          text = `${num1} − ${num2}`;
+          subType = `Easy Subtraction`;
+        } else if (type === 'mul') {
+          num1 = randomInt(2, 10);
+          num2 = randomInt(2, 10);
+          answer = num1 * num2;
+          text = `${num1} × ${num2}`;
+          subType = `Up to 10× Tables`;
+        } else if (type === 'div') {
+          num2 = randomInt(2, 10);
+          answer = randomInt(1, 10);
+          num1 = answer * num2;
+          text = `${num1} ÷ ${num2}`;
+          subType = `Up to 10÷ Tables`;
+        }
+      } else if (qIndex < 30) {
+        // Tier 2: Next 20 (Harder)
+        if (type === 'add') {
+          num1 = randomInt(20, 99);
+          num2 = randomInt(1, 50);
+          answer = num1 + num2;
+          text = `${num1} + ${num2}`;
+          subType = `2-Digit Addition`;
+        } else if (type === 'sub') {
+          num1 = randomInt(30, 150);
+          num2 = randomInt(10, 50);
+          if (num1 < num2) [num1, num2] = [num2, num1];
+          answer = num1 - num2;
+          text = `${num1} − ${num2}`;
+          subType = `Medium Subtraction`;
+        } else if (type === 'mul') {
+          num1 = randomInt(2, 12);
+          num2 = randomInt(2, 14);
+          answer = num1 * num2;
+          text = `${num1} × ${num2}`;
+          subType = `Up to 14× Tables`;
+        } else if (type === 'div') {
+          num2 = randomInt(2, 12);
+          answer = randomInt(2, 14);
+          num1 = answer * num2;
+          text = `${num1} ÷ ${num2}`;
+          subType = `Up to 14÷ Tables`;
+        }
+      } else {
+        // Tier 3: Next 20 & beyond (Much Harder / Full requested bounds)
+        if (type === 'add') {
+          num1 = randomInt(1, 999);  // 1-3 digit
+          num2 = randomInt(1, 99);   // 1-2 digit
+          answer = num1 + num2;
+          text = `${num1} + ${num2}`;
+          subType = `1-3 Digit + 1-2 Digit`;
+        } else if (type === 'sub') {
+          num1 = randomInt(10, 999); // 2-3 digit
+          num2 = randomInt(1, 99);   // 1-2 digit
+          if (num1 < num2) [num1, num2] = [num2, num1];
+          answer = num1 - num2;
+          text = `${num1} − ${num2}`;
+          subType = `2-3 Digit − 1-2 Digit`;
+        } else if (type === 'mul') {
+          num1 = randomInt(2, 12);
+          num2 = randomInt(2, 19);
+          if (Math.random() < 0.5) [num1, num2] = [num2, num1];
+          answer = num1 * num2;
+          text = `${num1} × ${num2}`;
+          subType = `2-12 × 2-19 Tables`;
+        } else if (type === 'div') {
+          num2 = randomInt(2, 12);     // divisor 2-12
+          answer = randomInt(2, 19);   // answer 2-19 (produces whole number)
+          num1 = answer * num2;
+          text = `${num1} ÷ ${num2}`;
+          subType = `Up to 19÷ Tables`;
+        }
+      }
+      return { id: Math.random().toString(36).substr(2, 9), type, text, answer, subType };
+    }
+
+    let level = diffLevels[type];
 
     if (type === 'add') {
       if (level === 1) {
@@ -852,6 +942,9 @@
         num1 = randomInt(20, 40);
         num2 = randomInt(10, num1 - 1);
         subType = `2-Digit − 2-Digit`;
+      }
+      if (num1 < num2) {
+        [num1, num2] = [num2, num1];
       }
       answer = num1 - num2;
       text = `${num1} − ${num2}`;
@@ -909,16 +1002,15 @@
   function createQuestionSet() {
     questions = [];
     if (isFullyRandomized) {
-      ['add', 'sub', 'mul', 'div'].forEach(type => {
-        for (let i = 0; i < 25; i++) {
-          questions.push(generateFact(type));
-        }
-      });
-      shuffleArray(questions);
+      const ops = ['add', 'sub', 'mul', 'div'];
+      for (let i = 0; i < 100; i++) {
+        const randomOp = ops[randomInt(0, ops.length - 1)];
+        questions.push(generateFact(randomOp, i));
+      }
     } else {
       currentOrder.forEach(type => {
         for (let i = 0; i < 25; i++) {
-          questions.push(generateFact(type));
+          questions.push(generateFact(type, questions.length));
         }
       });
     }
@@ -1081,7 +1173,7 @@
     for (let i = bufferStartIndex; i < questions.length; i++) {
       const futureQ = questions[i];
       if (futureQ.type === type && (!userAnswers[futureQ.id] || userAnswers[futureQ.id].trim() === '')) {
-        const newFact = generateFact(type);
+        const newFact = generateFact(type, i);
         newFact.id = futureQ.id;
         questions[i] = newFact;
 
@@ -1234,7 +1326,7 @@
     isRunning = false;
 
     if (highestStreak > persistentMaxStreak) {
-  persistentMaxStreak = highestStreak;
+      persistentMaxStreak = highestStreak;
     }
 
     selectedSummaryStreak = highestStreak;
@@ -2033,4 +2125,4 @@
   })();
 </script>
 </body>
-</html> 
+</html>
