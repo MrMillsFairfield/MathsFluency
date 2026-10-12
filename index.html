@@ -1057,6 +1057,11 @@
     const val = inputElem.value.trim();
 
     if (val === '') {
+      if (userAnswers[q.id] !== undefined) {
+        delete userAnswers[q.id];
+        inputElem.classList.remove('correct-box');
+        updateProgress();
+      }
       return true;
     }
 
@@ -1066,6 +1071,13 @@
     const isCorrect = numVal === q.answer;
 
     if (isCorrect) {
+      // Prevent streak glitch: If this question was ALREADY correctly answered, return true without incrementing streak
+      if (userAnswers[q.id] !== undefined) {
+        inputElem.classList.remove('shake-box');
+        inputElem.classList.add('correct-box');
+        return true;
+      }
+
       userAnswers[q.id] = val;
       inputElem.classList.remove('shake-box');
       inputElem.classList.add('correct-box');
@@ -1081,6 +1093,10 @@
       return true;
 
     } else {
+      if (userAnswers[q.id] !== undefined) {
+        delete userAnswers[q.id];
+      }
+
       attemptErrors.push({
         qText: q.text,
         wrongInput: val,
@@ -1094,8 +1110,8 @@
 
       if (lives <= 0) {
         resetStreakAndTriggerExplosion();
-        lives = MAX_LIVES; 
-        updateLivesUI();
+        finishTest();
+        return false;
       }
 
       triggerShakeAndClear(index);
@@ -1128,6 +1144,7 @@
   function requestNavigation(targetIndex) {
     if (isShaking) return;
     if (targetIndex === activeIndex) return;
+    if (targetIndex < 0 || targetIndex >= questions.length) return;
 
     const isValid = validateCurrentQuestion(activeIndex);
     if (isValid) {
@@ -1313,7 +1330,9 @@
   }
 
   function finishTest() {
-    validateCurrentQuestion(activeIndex);
+    if (!isRunning) return;
+    isRunning = false;
+    clearInterval(timerInterval);
 
     questions.forEach((q, idx) => {
       const inputElem = document.getElementById(`input-${idx}`);
@@ -1321,9 +1340,6 @@
         attemptedQIds.add(q.id);
       }
     });
-
-    clearInterval(timerInterval);
-    isRunning = false;
 
     if (highestStreak > persistentMaxStreak) {
       persistentMaxStreak = highestStreak;
