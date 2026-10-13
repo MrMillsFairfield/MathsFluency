@@ -1047,7 +1047,7 @@
     });
   }
 
-  function validateCurrentQuestion(index) {
+function validateCurrentQuestion(index) {
     if (index < 0 || index >= questions.length) return true;
     
     const q = questions[index];
@@ -1071,7 +1071,6 @@
     const isCorrect = numVal === q.answer;
 
     if (isCorrect) {
-      // Prevent streak glitch: If this question was ALREADY correctly answered, return true without incrementing streak
       if (userAnswers[q.id] !== undefined) {
         inputElem.classList.remove('shake-box');
         inputElem.classList.add('correct-box');
@@ -1108,10 +1107,11 @@
       lives--;
       updateLivesUI();
 
+      // When hearts reach 0, reset streak, trigger red explosion, and replenish hearts
       if (lives <= 0) {
         resetStreakAndTriggerExplosion();
-        finishTest();
-        return false;
+        lives = MAX_LIVES;
+        updateLivesUI();
       }
 
       triggerShakeAndClear(index);
