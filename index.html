@@ -574,6 +574,69 @@
 
   .hidden { display: none !important; }
 
+  /* ===== Name picker ===== */
+  #name-modal {
+    display: flex;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(6px);
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+    padding: 16px;
+  }
+  .name-card {
+    background: white;
+    width: 100%;
+    max-width: 640px;
+    max-height: 94vh;
+    overflow-y: auto;
+    border-radius: 16px;
+    padding: 22px 24px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+  }
+  .name-card h2 { font-size: 1.4rem; font-weight: 800; text-align: center; margin-bottom: 4px; }
+  .name-card p { text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px; }
+  #name-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+  .name-btn {
+    padding: 12px 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: #f8fafc;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .name-btn:hover { border-color: var(--accent); background: #eff6ff; }
+  .name-btn.selected { border-color: #f59e0b; background: #fffbeb; }
+  .name-btn.special { background: #f1f5f9; color: var(--text-secondary); }
+  .name-chip {
+    background: #f1f5f9;
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .name-chip:hover { background: #e2e8f0; }
+  .record-banner {
+    background: #fef3c7;
+    border: 1px solid #fde047;
+    color: #92400e;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+  .sync-status { font-size: 0.8rem; color: var(--text-secondary); text-align: center; margin-bottom: 14px; }
+
   @media (max-width: 768px) {
     .workspace { flex-direction: column; align-items: center; }
     .game-pane { width: 100%; max-width: 400px; margin-top: 10px; }
@@ -605,6 +668,7 @@
   </div>
 
   <div class="header-controls">
+    <button class="name-chip" id="name-chip" onclick="openNamePicker()">👤 Choose name</button>
     <button class="toggle-game-btn" id="game-toggle-btn" onclick="toggleGameMode()">
       🪩
     </button>
@@ -633,6 +697,14 @@
       <span class="game-streak-counter" id="tier-streak-display">STREAK: 0</span>
     </div>
     <canvas id="game-canvas" width="280" height="350"></canvas>
+  </div>
+</div>
+
+<div id="name-modal">
+  <div class="name-card">
+    <h2>Who's taking the test?</h2>
+    <p>Tap your name to begin</p>
+    <div id="name-grid"></div>
   </div>
 </div>
 
@@ -675,7 +747,11 @@
       <div class="ball-gallery" id="ball-gallery-grid"></div>
     </div>
 
+    <div class="record-banner hidden" id="record-banner"></div>
+
     <div class="recommendation-box" id="rec-val"></div>
+
+    <div class="sync-status" id="sync-status"></div>
 
     <div class="incorrect-section">
       <div class="incorrect-title">Attempt Errors & Wrong Guesses</div>
@@ -721,6 +797,132 @@
 
   // Track persistent high score / streak unlocks across test attempts
   let persistentMaxStreak = 0;
+
+  // ===== GOOGLE SHEETS CONNECTION =====
+  // Paste the Web App URL from Apps Script (Deploy > New deployment) between the quotes.
+  const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzDi2FDPNos1kIJPXUl1ytsfhdag3wCziida9qlzkvJC1Mwrje6OjnlF5nSLcNPKoTH-Q/exec';
+
+  const STUDENTS = [
+    'Zoe B.', 'Thea B.', 'Esme D.', 'Bailey D.', 'Azmaan G.', 'Christopher G.',
+    'Georgia H.', 'Elin H.', 'Leo H.', 'George M.', 'Nixon M.', 'Shanaya M.',
+    'Chloe M.', 'Mitchell O.', 'Monty S.', 'Archie S.', 'Oliver T.', 'Elise T.',
+    'Indi vB', 'William vR', 'Hudson W.', 'Roman W.', 'Oliver W.', 'Max W.',
+    'Caitlyn W.', 'Jazmine W.', 'Michael Y.', 'Joshua Y.', 'Anonymous', 'Mr Mills'
+  ];
+
+  let studentName = null;
+  let previousBest = null;
+  let attemptLog = [];
+  let questionStart = 0;
+  let sessionId = '';
+
+  function sheetConfigured() {
+    return SHEET_URL && SHEET_URL.indexOf('http') === 0;
+  }
+
+  function updateNameChip() {
+    const chip = document.getElementById('name-chip');
+    if (!studentName) { chip.textContent = '👤 Choose name'; return; }
+    chip.textContent = '👤 ' + studentName + (previousBest !== null ? ' · Best ' + previousBest : '');
+  }
+
+  function renderNamePicker() {
+    const grid = document.getElementById('name-grid');
+    grid.innerHTML = '';
+    STUDENTS.forEach(n => {
+      const b = document.createElement('button');
+      b.className = 'name-btn' + (n === studentName ? ' selected' : '') + ((n === 'Anonymous' || n === 'Mr Mills') ? ' special' : '');
+      b.textContent = n;
+      b.onclick = () => pickName(n);
+      grid.appendChild(b);
+    });
+  }
+
+  function openNamePicker() {
+    if (isRunning) return;
+    renderNamePicker();
+    document.getElementById('name-modal').style.display = 'flex';
+  }
+
+  function pickName(n) {
+    studentName = n;
+    previousBest = null;
+    updateNameChip();
+    document.getElementById('name-modal').style.display = 'none';
+    fetchBest(n);
+  }
+
+  async function fetchBest(n) {
+    if (!sheetConfigured()) return;
+    try {
+      const r = await fetch(SHEET_URL + '?action=best&name=' + encodeURIComponent(n));
+      const d = await r.json();
+      if (studentName === n && typeof d.best === 'number') {
+        previousBest = d.best;
+        updateNameChip();
+      }
+    } catch (e) { /* offline or not deployed yet: carry on without it */ }
+  }
+
+  function loadPending() {
+    try { return JSON.parse(localStorage.getItem('mathPendingSessions') || '[]'); } catch (e) { return []; }
+  }
+  function savePending(list) {
+    try { localStorage.setItem('mathPendingSessions', JSON.stringify(list)); } catch (e) {}
+  }
+
+  async function postSession(payload) {
+    await fetch(SHEET_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  function setSync(msg) {
+    const el = document.getElementById('sync-status');
+    if (el) el.textContent = msg;
+  }
+
+  async function sendSession(payload) {
+    if (!sheetConfigured()) {
+      setSync('Not connected to a Google Sheet yet, so this result was not saved.');
+      return;
+    }
+    setSync('Sending results to the sheet…');
+    try {
+      await postSession(payload);
+      setSync('✅ Results sent to the class sheet');
+    } catch (e) {
+      const list = loadPending();
+      list.push(payload);
+      savePending(list);
+      setSync('⚠️ Could not reach the sheet. Saved on this device and will retry next time this page opens.');
+    }
+  }
+
+  // Safe to resend: the sheet ignores a sessionId it has already recorded.
+  async function retryPending() {
+    const list = loadPending();
+    if (!list.length || !sheetConfigured()) return;
+    const left = [];
+    for (const s of list) {
+      try { await postSession(s); } catch (e) { left.push(s); }
+    }
+    savePending(left);
+  }
+
+  function logAttempt(q, given, isCorrect) {
+    attemptLog.push({
+      q: q.text,
+      op: q.type,
+      answer: q.answer,
+      given: parseInt(given, 10),
+      correct: isCorrect ? 1 : 0,
+      ms: Math.min(Date.now() - questionStart, 120000)
+    });
+  }
 
   const opSymbols = { add: '+', sub: '−', mul: '×', div: '÷' };
   const opNames = { add: 'Addition', sub: 'Subtraction', mul: 'Multiplication', div: 'Division' };
@@ -1077,6 +1279,7 @@ function validateCurrentQuestion(index) {
         return true;
       }
 
+      logAttempt(q, val, true);
       userAnswers[q.id] = val;
       inputElem.classList.remove('shake-box');
       inputElem.classList.add('correct-box');
@@ -1096,6 +1299,7 @@ function validateCurrentQuestion(index) {
         delete userAnswers[q.id];
       }
 
+      logAttempt(q, val, false);
       attemptErrors.push({
         qText: q.text,
         wrongInput: val,
@@ -1156,6 +1360,7 @@ function validateCurrentQuestion(index) {
     if (index < 0 || index >= questions.length) return;
 
     activeIndex = index;
+    questionStart = Date.now();
     document.querySelectorAll('.q-row').forEach(r => r.classList.remove('active'));
     
     const container = document.getElementById('question-list');
@@ -1269,8 +1474,11 @@ function validateCurrentQuestion(index) {
 
   function startTest() {
     if (isRunning) return;
+    if (!studentName) { openNamePicker(); return; }
     isRunning = true;
-    
+    attemptLog = [];
+    sessionId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
     document.getElementById('start-btn').classList.add('hidden');
     document.getElementById('setup-panel').classList.add('disabled-panel');
     
@@ -1412,6 +1620,34 @@ function validateCurrentQuestion(index) {
       });
     }
 
+    // Personal-best banner
+    const banner = document.getElementById('record-banner');
+    if (previousBest !== null && correctCount > previousBest) {
+      banner.textContent = `🏆 New personal best! ${correctCount} correct (previous best: ${previousBest})`;
+      banner.classList.remove('hidden');
+    } else if (previousBest !== null) {
+      banner.textContent = `Personal best: ${previousBest} correct`;
+      banner.classList.remove('hidden');
+    } else {
+      banner.classList.add('hidden');
+    }
+
+    // Send everything to the Google Sheet
+    sendSession({
+      sessionId: sessionId,
+      name: studentName,
+      timestamp: new Date().toISOString(),
+      correct: correctCount,
+      attempted: totalAnswered,
+      errors: totalErrors,
+      highestStreak: highestStreak,
+      ppm: ppm,
+      seconds: timeSpentSeconds,
+      mode: isFullyRandomized ? 'Mixed' : 'Ordered',
+      order: isFullyRandomized ? 'mixed' : currentOrder.join('>'),
+      attempts: attemptLog
+    });
+
     renderBallGallery();
     document.getElementById('summary-modal').style.display = 'flex';
   }
@@ -1428,6 +1664,9 @@ function validateCurrentQuestion(index) {
     highestStreak = 0;
     lives = MAX_LIVES;
     diffLevels = { add: 1, sub: 1, mul: 3, div: 3 };
+    attemptLog = [];
+    document.getElementById('record-banner').classList.add('hidden');
+    setSync('');
 
     document.getElementById('timer-display').textContent = '03:00';
     document.getElementById('progress-display').textContent = '0 / 100';
@@ -1439,6 +1678,9 @@ function validateCurrentQuestion(index) {
     updateStreakUI();
     createQuestionSet();
     renderQuestions();
+
+    // Shared computers: always ask who is going next
+    openNamePicker();
   }
 
   // Initial load initialization
@@ -1446,6 +1688,8 @@ function validateCurrentQuestion(index) {
   createQuestionSet();
   renderQuestions();
   updateLivesUI();
+  renderNamePicker();
+  retryPending();
 </script>
 
 <script>
