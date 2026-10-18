@@ -401,6 +401,27 @@
   .metric-value { font-size: 1.35rem; font-weight: 800; color: var(--accent); }
   .metric-title { font-size: 0.65rem; color: var(--text-secondary); margin-top: 4px; text-transform: uppercase; font-weight: 700; }
 
+  /* Per-operation results */
+  .op-breakdown { margin-bottom: 18px; }
+  .op-breakdown-title { font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em; }
+  .op-row {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    border-left-width: 6px;
+    background: #f8fafc;
+    font-size: 0.9rem;
+  }
+  .op-row.op-head { background: transparent; border: none; padding: 0 12px; margin-bottom: 4px; font-size: 0.65rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+  .op-row .op-name { font-weight: 800; }
+  .op-row .op-num { text-align: center; font-weight: 800; font-size: 1.05rem; }
+  .op-row .op-num.wrong { color: #dc2626; }
+
   /* Final Mascot Tier Showcase & Gallery */
   .final-ball-card {
     background: #0f172a;
@@ -838,6 +859,11 @@
         <div class="metric-value" id="ppm-val">0</div>
         <div class="metric-title">Problems / Min</div>
       </div>
+    </div>
+
+    <div class="op-breakdown">
+      <div class="op-breakdown-title">Results by operation</div>
+      <div id="op-breakdown"></div>
     </div>
 
     <!-- Final Mascot Tier Showcase & Interactive Unlocked Collection Grid -->
@@ -1496,6 +1522,21 @@
     breakLeft = BREAK_SECONDS;
     breakNextPhase = nextPhase;
 
+    // Get the next part ready behind the break screen (instant jump, no smooth scroll),
+    // so there is no delay when the countdown ends.
+    currentPhase = nextPhase;
+    applyPhaseVisibility();
+    renderPhaseBanner(false);
+    const listEl = document.getElementById('question-list');
+    listEl.style.scrollBehavior = 'auto';
+    listEl.scrollTop = 0;
+    listEl.style.scrollBehavior = '';
+    const firstIdx = phaseRange(currentPhase).start;
+    activeIndex = firstIdx;
+    document.querySelectorAll('.q-row').forEach(r => r.classList.remove('active'));
+    const firstRow = document.getElementById('row-' + firstIdx);
+    if (firstRow) firstRow.classList.add('active');
+
     const top = document.getElementById('break-top');
     top.style.background = opColors[done.type];
     top.textContent = opSymbols[done.type] + '  ' + opNames[done.type] + ' done!';
@@ -1533,11 +1574,8 @@
   function endBreak() {
     inBreak = false;
     document.getElementById('break-modal').style.display = 'none';
-    currentPhase = breakNextPhase;
-    applyPhaseVisibility();
     document.querySelectorAll('.q-input').forEach(input => input.disabled = false);
     renderPhaseBanner(true);
-    document.getElementById('question-list').scrollTop = 0;
     focusInput(phaseRange(currentPhase).start);
   }
 
@@ -2001,6 +2039,22 @@ function validateCurrentQuestion(index) {
       if (attemptedQIds.has(q.id)) o.attempted++;
       if (userAnswers[q.id] !== undefined && userAnswers[q.id] !== '') o.correct++;
     });
+
+    // Results by operation (accuracy = correct / (correct + wrong tries), same as the break screen and the sheet)
+    const opBox = document.getElementById('op-breakdown');
+    let opHtml = '<div class="op-row op-head"><span>Operation</span><span style="text-align:center">Correct</span>' +
+      '<span style="text-align:center">Wrong tries</span><span style="text-align:center">Accuracy</span></div>';
+    (isFullyRandomized ? ['mul', 'div', 'add', 'sub'] : currentOrder).forEach(op => {
+      const o = opStats[op];
+      const tot = o.correct + o.wrong;
+      const acc = tot ? Math.round(100 * o.correct / tot) + '%' : '–';
+      opHtml += '<div class="op-row" style="border-left-color:' + opColors[op] + '">' +
+        '<span class="op-name" style="color:' + opColors[op] + '">' + opSymbols[op] + ' ' + opNames[op] + '</span>' +
+        '<span class="op-num">' + o.correct + '</span>' +
+        '<span class="op-num wrong">' + o.wrong + '</span>' +
+        '<span class="op-num">' + acc + '</span></div>';
+    });
+    opBox.innerHTML = opHtml;
 
     // Send everything to the Google Sheet
     sendSession({
